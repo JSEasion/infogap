@@ -1,4 +1,4 @@
-# 🔭 行业透镜 market-lens
+# 🔭 信息差 xinxicha
 
 本地优先的**求职情报与决策服务**：把散落在各平台的招聘 JD 与行业资讯统一采集 → **质量门筛选** → LLM 结构化 → 统计聚合 → 行情报告 / 差距分析 / 资讯周报 / 数据问答，并按你的**个人偏好**（薪资底线、目标城市、加班容忍度等）对每个岗位算可解释的匹配分。
 
@@ -52,9 +52,9 @@ uv pip install -e ".[dev]"
 cp .env.example .env   # 填 DEEPSEEK_API_KEY，或指向你的 vLLM/内网端点
 
 # 4) 初始化 + 示例数据 + 启动
-.venv/bin/market-lens init-db
-.venv/bin/market-lens load-sample
-.venv/bin/market-lens serve          # http://127.0.0.1:8000
+.venv/bin/xinxicha init-db
+.venv/bin/xinxicha load-sample
+.venv/bin/xinxicha serve          # http://127.0.0.1:8000
 ```
 
 打开 <http://127.0.0.1:8000>，点「数据导入 → 载入示例数据」即可开箱体验；真实使用从「粘贴导入」你关注的 JD 开始。
@@ -62,19 +62,19 @@ cp .env.example .env   # 填 DEEPSEEK_API_KEY，或指向你的 vLLM/内网端�
 ### CLI 一览
 
 ```bash
-market-lens init-db          # 初始化 SQLite
-market-lens load-sample      # 32 条示例 JD + 资讯
-market-lens serve            # 启动 Web（--host/--port 可调；自动拉起任务框架+每日调度）
-market-lens run-once         # v0.2 一键全链路：采集→质量门→精选发布→整合→快照→向量化
+xinxicha init-db          # 初始化 SQLite
+xinxicha load-sample      # 32 条示例 JD + 资讯
+xinxicha serve            # 启动 Web（--host/--port 可调；自动拉起任务框架+每日调度）
+xinxicha run-once         # v0.2 一键全链路：采集→质量门→精选发布→整合→快照→向量化
                               #   --no-collect 只处理已落地数据；--channels v2ex,iguopin 指定渠道
-market-lens migrate-gold     # v0.2 老库升级：存量入 raw 层 + 重过质量门 + JD 排版修复 + 资讯补信号卡
+xinxicha migrate-gold     # v0.2 老库升级：存量入 raw 层 + 重过质量门 + JD 排版修复 + 资讯补信号卡
                               #   （只降级不删除；--no-rescore 跳过重打分）
-market-lens ingest-file a.txt --no-llm   # 导入 JD 文件（--no-llm 纯规则）
-market-lens ingest-rss       # 抓取公开资讯
-market-lens report --kind market|gap|digest   # 生成报告到 data/reports/
-market-lens ask "北京的 Agent 岗普遍要求什么"  # 命令行问答（混合检索）
-market-lens repair-salary    # 薪资以 salary_raw 原文为唯一依据重算
-market-lens self-test        # 规则层快速自检（薪资/WLB/技能/文本规范化/反诈骗）
+xinxicha ingest-file a.txt --no-llm   # 导入 JD 文件（--no-llm 纯规则）
+xinxicha ingest-rss       # 抓取公开资讯
+xinxicha report --kind market|gap|digest   # 生成报告到 data/reports/
+xinxicha ask "北京的 Agent 岗普遍要求什么"  # 命令行问答（混合检索）
+xinxicha repair-salary    # 薪资以 salary_raw 原文为唯一依据重算
+xinxicha self-test        # 规则层快速自检（薪资/WLB/技能/文本规范化/反诈骗）
 ```
 
 ## 模型接入配置（推荐：设置页一键配置，保存即测试、即热生效）
@@ -112,7 +112,7 @@ llm:
 ### DSH 引擎（可选，研究型任务）
 
 ```bash
-uv pip install "market-lens[dsh]"    # deepseek-harness-sdk + 内置运行时
+uv pip install "xinxicha[dsh]"    # deepseek-harness-sdk + 内置运行时
 ```
 
 安装后「设置」页显示引擎可用，research 类任务自动走 DSH agent（多轮自主执行、工具调用）。DSH 内置 provider 走 Anthropic 协议；对 vLLM/内网端点，适配器会自动注册 `openai-completions` 型 provider（写 `data/dsh_home/profiles/sdk/cordis.patch.yml`），无需改 DSH 原生代码。DSH 是 preview 版有 breaking 风险，出问题可 `dsh_enabled: false` 一键退回直连。
@@ -182,11 +182,11 @@ uv pip install "market-lens[dsh]"    # deepseek-harness-sdk + 内置运行时
 ### 构建
 
 ```bash
-# macOS（本仓库在 Mac 上）：产出 dist/行业透镜.app + dist/行业透镜.dmg
+# macOS（本仓库在 Mac 上）：产出 dist/信息差.app + dist/信息差.dmg
 bash packaging/build_mac.sh
 
 # Windows（需在 Windows 机器上，装好 Python 3.10+ 与 Inno Setup 6）：
-#   产出 dist\MarketLens-Setup-0.1.0.exe（未装 Inno Setup 则产出 zip 免安装包）
+#   产出 dist\Xinxicha-Setup-0.1.0.exe（未装 Inno Setup 则产出 zip 免安装包）
 powershell -ExecutionPolicy Bypass -File packaging\build_windows.ps1
 ```
 
@@ -196,14 +196,14 @@ CI 自动双平台构建：`.github/workflows/release.yml`——推 git 标签 `
 ### 桌面版行为说明
 
 - 首次启动自动建库并载入 32 条示例数据（无 API key 也能完整体验）；界面即「设置」页配置模型
-- 用户数据目录：mac `~/Library/Application Support/market-lens/`，Win `%APPDATA%\market-lens\`
+- 用户数据目录：mac `~/Library/Application Support/xinxicha/`，Win `%APPDATA%\xinxicha\`
   （含 `config.yaml`、`.env`、`data/app.db`）——卸载不删数据；开发态仍用仓库内 `data/`
 - 固定端口可设环境变量 `MARKET_LENS_PORT`；默认每次启动随机空闲端口，仅本机可访问
 
 ### 分发提示（macOS Gatekeeper）
 
 未做开发者证书签名/公证时，他人首次打开需：**右键 .app → 打开 → 再点「打开」**，
-或终端执行 `xattr -cr /Applications/行业透镜.app` 清除隔离标记。Windows 版由 Inno Setup
+或终端执行 `xattr -cr /Applications/信息差.app` 清除隔离标记。Windows 版由 Inno Setup
 安装器签名位处理，SmartScreen 提示同理点「仍要运行」。
 
 ## 测试
@@ -216,7 +216,7 @@ CI 自动双平台构建：`.github/workflows/release.yml`——推 git 标签 `
 ## 路线图
 
 - [ ] 公司口碑卡：搜索 API 聚合「公司名+加班/裁员/融资」信号（DSH research 主战场）
-- [ ] DSH TS 薄插件（dsh-plugin-market-lens）：把岗位库查询暴露为 agent 工具
+- [ ] DSH TS 薄插件（dsh-plugin-xinxicha）：把岗位库查询暴露为 agent 工具
 - [x] ~~向量召回~~ v0.2 已完成（bge-m3 + RRF + bge-reranker 混合检索）
 - [x] ~~趋势追踪~~ v0.2 已完成（周快照 + 技能势能 rising/falling）
 - [x] ~~定时任务~~ v0.2 已完成（serve 常驻每日调度 + 任务中心）

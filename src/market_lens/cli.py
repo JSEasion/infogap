@@ -1,11 +1,11 @@
-"""CLI 入口：market-lens <command>"""
+"""CLI 入口：xinxicha <command>"""
 from __future__ import annotations
 
 from pathlib import Path
 
 import typer
 
-app = typer.Typer(add_completion=False, help="行业透镜 market-lens：本地优先的求职情报与决策服务")
+app = typer.Typer(add_completion=False, help="信息差 xinxicha：本地优先的求职情报与决策服务")
 
 
 def _conn():
@@ -51,7 +51,7 @@ def load_sample():
 def serve(host: str = "127.0.0.1", port: int = 8000):
     """启动 Web 服务。"""
     import uvicorn
-    typer.echo(f"🔭 行业透镜启动：http://{host}:{port}")
+    typer.echo(f"🔭 信息差启动：http://{host}:{port}")
     uvicorn.run("market_lens.web.app:app", host=host, port=port)
 
 

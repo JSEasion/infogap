@@ -19,7 +19,7 @@ from ..news_pipeline import extract_fulltext
 from ..textfmt import normalize_text
 from . import browser as browser_cards
 
-UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) market-lens/0.1 (personal research)"
+UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) xinxicha/0.1 (personal research)"
 _TIMEOUT = 25.0
 
 # 已知招聘站点 → 站点适配名（tier 映射见 quality.SOURCE_META）

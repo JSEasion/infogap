@@ -2,7 +2,7 @@
 """Boss直聘 半自动采集脚本（采集你本人账号的搜索结果，供个人分析）。
 
 用法：
-    uv pip install "market-lens[capture]" && playwright install chromium
+    uv pip install "xinxicha[capture]" && playwright install chromium
     .venv/bin/python scripts/capture_zhipin.py "Agent 开发" --pages 3
     # 浏览器打开后手动登录 → 搜索到结果列表页 → 回到终端按回车开始采集
     # 采集结果写入 data/imports/zhipin_capture.jsonl，随后在 Web「数据导入」页导入
@@ -43,7 +43,7 @@ def main() -> None:
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
-        sys.exit("需要先安装：uv pip install 'market-lens[capture]' && playwright install chromium")
+        sys.exit("需要先安装：uv pip install 'xinxicha[capture]' && playwright install chromium")
 
     DATA.mkdir(parents=True, exist_ok=True)
     (DATA / "browser_profile").mkdir(parents=True, exist_ok=True)
@@ -81,7 +81,7 @@ def main() -> None:
             f.write(json.dumps({"text": t}, ensure_ascii=False) + "\n")
     print(f"\n完成：{len(collected)} 条 → {out_path}")
     print("到 Web「数据导入」页上传该文件，或在终端执行：")
-    print(f"  .venv/bin/market-lens ingest-file {out_path}")
+    print(f"  .venv/bin/xinxicha ingest-file {out_path}")
 
 
 if __name__ == "__main__":

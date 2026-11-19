@@ -68,7 +68,7 @@ def start() -> None:
     with _LOCK:
         if STATE.get("_thread"):
             return
-        t = threading.Thread(target=_loop, daemon=True, name="market-lens-scheduler")
+        t = threading.Thread(target=_loop, daemon=True, name="xinxicha-scheduler")
         t.start()
         STATE["_thread"] = t
 

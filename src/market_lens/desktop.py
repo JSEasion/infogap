@@ -1,7 +1,7 @@
 """桌面版启动器：后台起 uvicorn，原生窗口（pywebview）打开 Web 界面。
 
 PyInstaller 打包后的流程：
-1. config 已在导入时定位到用户数据目录（mac: ~/Library/Application Support/market-lens）
+1. config 已在导入时定位到用户数据目录（mac: ~/Library/Application Support/xinxicha）
 2. 初始化数据库；首启自动载入示例数据（无 API key 也能完整体验）
 3. 随机空闲端口起本地服务，仅 127.0.0.1 可访问
 4. 打开原生窗口；关窗即退出
@@ -14,7 +14,7 @@ import threading
 import time
 import webbrowser
 
-APP_TITLE = "行业透镜 Market Lens"
+APP_TITLE = "信息差"
 
 
 def _pick_port() -> int:

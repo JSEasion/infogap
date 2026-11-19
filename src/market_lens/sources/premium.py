@@ -15,7 +15,7 @@ import httpx
 
 from ..news_pipeline import extract_fulltext
 
-UA = {"User-Agent": "market-lens/0.1 (personal research)"}
+UA = {"User-Agent": "xinxicha/0.1 (personal research)"}
 
 # 默认 boards（2026-11 实测可用；公司迁移招聘系统属常态，404 自动跳过并记录）
 _DEFAULT_GREENHOUSE = ["anthropic", "xai", "scaleai", "databricks", "gleanwork",

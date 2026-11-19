@@ -1,7 +1,7 @@
 [project]
-name = "market-lens"
+name = "xinxicha"
 version = "0.1.0"
-description = "行业透镜：本地优先的求职情报与决策服务（采集→结构化→行情报告→差距分析→匹配→问答）"
+description = "信息差：本地优先的求职情报与决策服务（采集→结构化→行情报告→差距分析→匹配→问答）"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -29,7 +29,7 @@ desktop = ["pywebview>=5.1"]  # 桌面版原生窗口
 pack = ["pyinstaller>=6.6", "pillow>=10.0"]  # 打包工具链
 
 [project.scripts]
-market-lens = "market_lens.cli:main"
+xinxicha = "market_lens.cli:main"
 
 [build-system]
 requires = ["hatchling"]

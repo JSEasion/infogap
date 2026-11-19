@@ -32,7 +32,7 @@ def _writable_root() -> Path:
         base = Path(os.environ.get("APPDATA") or home / "AppData" / "Roaming")
     else:
         base = home / ".local" / "share"
-    return base / "market-lens"
+    return base / "xinxicha"
 
 
 RESOURCE_DIR = _resource_dir()

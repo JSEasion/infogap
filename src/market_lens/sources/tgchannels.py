@@ -14,7 +14,7 @@ import time
 import httpx
 from bs4 import BeautifulSoup
 
-UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) market-lens/0.1 (personal research)"
+UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) xinxicha/0.1 (personal research)"
 
 # 岗位/内推相关性过滤（频道里也混着大量闲聊）
 _KEEP = re.compile(

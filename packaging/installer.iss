@@ -1,12 +1,12 @@
-; 行业透镜 Windows 安装器（Inno Setup 6）
+﻿; 信息差 Windows 安装器（Inno Setup 6）
 ; 构建：powershell -ExecutionPolicy Bypass -File packaging\build_windows.ps1
-; 或手动：ISCC packaging\installer.iss（需先跑完 PyInstaller，产物在 dist\market_lens）
+; 或手动：ISCC packaging\installer.iss（需先跑完 PyInstaller，产物在 dist\xinxicha）
 
-#define MyAppName "行业透镜 Market Lens"
-#define MyAppNameEn "MarketLens"
+#define MyAppName "信息差 Xinxicha"
+#define MyAppNameEn "Xinxicha"
 #define MyAppVersion "0.1.0"
-#define MyAppPublisher "Market Lens"
-#define MyAppExeName "MarketLens.exe"
+#define MyAppPublisher "Xinxicha"
+#define MyAppExeName "Xinxicha.exe"
 
 [Setup]
 AppId={{7A3F9C2E-1B4D-4E8A-9C6F-2D5E8A1B3C7D}
@@ -17,8 +17,8 @@ DefaultDirName={autopf}\{#MyAppNameEn}
 DefaultGroupName={#MyAppName}
 UninstallDisplayName={#MyAppName}
 OutputDir=..\dist
-OutputBaseFilename=MarketLens-Setup-{#MyAppVersion}
-SetupIconFile=icons\MarketLens.ico
+OutputBaseFilename=Xinxicha-Setup-{#MyAppVersion}
+SetupIconFile=icons\Xinxicha.ico
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -35,7 +35,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "..\dist\market_lens\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
+Source: "..\dist\xinxicha\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
@@ -46,7 +46,7 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent
 
 [UninstallDelete]
-; 数据在 %APPDATA%\market-lens，卸载不删用户数据，仅删程序目录
+; 数据在 %APPDATA%\xinxicha，卸载不删用户数据，仅删程序目录
 Type: filesandordirs; Name: "{app}"
 
 [Code]

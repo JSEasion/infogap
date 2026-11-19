@@ -146,7 +146,7 @@ async def lifespan(_app: FastAPI):
     yield
 
 
-app = FastAPI(title="行业透镜 market-lens", docs_url=None, redoc_url=None,
+app = FastAPI(title="信息差 market-lens", docs_url=None, redoc_url=None,
               lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=str(WEB_DIR / "static")), name="static")
 

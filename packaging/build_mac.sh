@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 构建 macOS 桌面版：dist/行业透镜.app + dist/行业透镜.dmg
+# 构建 macOS 桌面版：dist/信息差.app + dist/信息差.dmg
 # 用法：bash packaging/build_mac.sh [venv-python路径]
 set -euo pipefail
 
@@ -7,7 +7,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
 PY="${1:-$ROOT/.venv/bin/python}"
 [ -x "$PY" ] || PY="$(command -v python3)"
-APP_NAME="行业透镜"
+APP_NAME="信息差"
 
 echo "▶ 使用 Python: $PY"
 "$PY" -c "import PyInstaller, webview" 2>/dev/null || {

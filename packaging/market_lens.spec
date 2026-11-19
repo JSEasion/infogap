@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""行业透镜桌面版打包配置（macOS .app + Windows exe 共用）。
+"""信息差桌面版打包配置（macOS .app + Windows exe 共用）。
 
 构建：见 packaging/build_mac.sh / packaging/build_windows.ps1
 """
@@ -43,12 +43,12 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="MarketLens",
+    name="Xinxicha",
     debug=False,
     strip=False,
     upx=False,
     console=False,
-    icon=str(HERE / "icons/MarketLens.ico") if sys.platform == "win32" else None,
+    icon=str(HERE / "icons/Xinxicha.ico") if sys.platform == "win32" else None,
 )
 
 coll = COLLECT(
@@ -57,18 +57,18 @@ coll = COLLECT(
     a.datas,
     strip=False,
     upx=False,
-    name="market_lens",
+    name="xinxicha",
 )
 
 if sys.platform == "darwin":
     BUNDLE(
         coll,
-        name="行业透镜.app",
-        icon=str(HERE / "icons/MarketLens.icns"),
-        bundle_identifier="com.marketlens.desktop",
+        name="信息差.app",
+        icon=str(HERE / "icons/Xinxicha.icns"),
+        bundle_identifier="com.xinxicha.desktop",
         info_plist={
-            "CFBundleName": "行业透镜",
-            "CFBundleDisplayName": "行业透镜",
+            "CFBundleName": "信息差",
+            "CFBundleDisplayName": "信息差",
             "CFBundleShortVersionString": VERSION,
             "CFBundleVersion": VERSION,
             "LSMinimumSystemVersion": "11.0",
