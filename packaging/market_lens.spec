@@ -43,12 +43,12 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="Xinxicha",
+    name="InfoGap",
     debug=False,
     strip=False,
     upx=False,
     console=False,
-    icon=str(HERE / "icons/Xinxicha.ico") if sys.platform == "win32" else None,
+    icon=str(HERE / "icons/InfoGap.ico") if sys.platform == "win32" else None,
 )
 
 coll = COLLECT(
@@ -57,15 +57,15 @@ coll = COLLECT(
     a.datas,
     strip=False,
     upx=False,
-    name="xinxicha",
+    name="infogap",
 )
 
 if sys.platform == "darwin":
     BUNDLE(
         coll,
         name="信息差.app",
-        icon=str(HERE / "icons/Xinxicha.icns"),
-        bundle_identifier="com.xinxicha.desktop",
+        icon=str(HERE / "icons/InfoGap.icns"),
+        bundle_identifier="com.infogap.desktop",
         info_plist={
             "CFBundleName": "信息差",
             "CFBundleDisplayName": "信息差",

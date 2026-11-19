@@ -367,7 +367,7 @@ class TaskManager:
     def start(self, workers: int = 2) -> None:
         for _ in range(workers):
             t = threading.Thread(target=self._worker, daemon=True,
-                                 name=f"xinxicha-task-{len(self._threads)}")
+                                 name=f"infogap-task-{len(self._threads)}")
             t.start()
             self._threads.append(t)
 

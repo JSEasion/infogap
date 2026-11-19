@@ -44,7 +44,7 @@ def _register_openai_provider(home: Path, profile: str, cand) -> str:
         "config": {
             "providers": {
                 PROVIDER_ID: {
-                    "displayName": "xinxicha engine",
+                    "displayName": "infogap engine",
                     "api": "openai-completions",
                     "baseURL": cand.base_url,
                     "apiKeyEnv": "ML_ENGINE_API_KEY",
@@ -73,7 +73,7 @@ def run_research(objective: str, timeout_s: int = 600) -> str:
     try:
         from deepseek_harness import DeepSeekHarness
     except ImportError as e:
-        raise DshUnavailable("deepseek-harness-sdk 未安装（uv pip install 'xinxicha[dsh]'）") from e
+        raise DshUnavailable("deepseek-harness-sdk 未安装（uv pip install 'infogap[dsh]'）") from e
 
     cands = settings.candidates("research")
     if not cands:

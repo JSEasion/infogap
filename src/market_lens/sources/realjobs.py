@@ -20,7 +20,7 @@ import httpx
 from .. import db
 from ..extract import structure
 
-UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) xinxicha/0.1 (personal research)"}
+UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) infogap/0.1 (personal research)"}
 
 CHANNELS = {
     "v2ex": "V2EX 酷工作（中文开发者社区招聘）",

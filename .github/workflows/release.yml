@@ -43,11 +43,11 @@ jobs:
       - name: 上传产物
         uses: actions/upload-artifact@v4
         with:
-          name: xinxicha-${{ matrix.platform }}
+          name: infogap-${{ matrix.platform }}
           path: |
             dist/*.dmg
-            dist/Xinxicha-Setup-*.exe
-            dist/Xinxicha-win64.zip
+            dist/InfoGap-Setup-*.exe
+            dist/InfoGap-win64.zip
           if-no-files-found: error
 
       - name: 附到 Release（仅打标签时）
@@ -56,5 +56,5 @@ jobs:
         with:
           files: |
             dist/*.dmg
-            dist/Xinxicha-Setup-*.exe
-            dist/Xinxicha-win64.zip
+            dist/InfoGap-Setup-*.exe
+            dist/InfoGap-win64.zip

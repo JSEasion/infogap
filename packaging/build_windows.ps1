@@ -1,4 +1,4 @@
-﻿# 构建 Windows 桌面版：dist\Xinxicha\ + 安装包 dist\Xinxicha-Setup-<ver>.exe
+﻿# 构建 Windows 桌面版：dist\InfoGap\ + 安装包 dist\InfoGap-Setup-<ver>.exe
 # 用法（在 Windows 上，项目根目录执行）：powershell -ExecutionPolicy Bypass -File packaging\build_windows.ps1
 # 前置：已安装 Python 3.10+ 并在 PATH；安装了 Inno Setup 6 则产出安装器，否则产出 zip
 $ErrorActionPreference = "Stop"
@@ -26,8 +26,8 @@ if (Test-Path $Iscc) {
   if ($LASTEXITCODE -ne 0) { throw "Inno Setup 失败" }
 } else {
   Write-Host "⚠ 未找到 Inno Setup 6，改为输出 zip（免安装版）"
-  if (Test-Path "$Root\dist\Xinxicha-win64.zip") { Remove-Item "$Root\dist\Xinxicha-win64.zip" }
-  Compress-Archive -Path "$Root\dist\xinxicha" -DestinationPath "$Root\dist\Xinxicha-win64.zip"
+  if (Test-Path "$Root\dist\InfoGap-win64.zip") { Remove-Item "$Root\dist\InfoGap-win64.zip" }
+  Compress-Archive -Path "$Root\dist\infogap" -DestinationPath "$Root\dist\InfoGap-win64.zip"
 }
 
 Write-Host "✔ 完成，产物在 dist\ 目录"

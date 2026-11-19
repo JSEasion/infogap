@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 import httpx
 from bs4 import BeautifulSoup
 
-UA = {"User-Agent": "xinxicha/0.1 (personal research)"}
+UA = {"User-Agent": "infogap/0.1 (personal research)"}
 
 
 # ---------------- arXiv（官方 Atom API） ----------------

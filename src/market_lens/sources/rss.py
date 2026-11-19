@@ -16,7 +16,7 @@ from .. import db
 from ..config import Settings
 from ..textfmt import clean_inline
 
-UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) xinxicha/0.1 (personal research)"
+UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) infogap/0.1 (personal research)"
 
 
 def _strip_html(text: str) -> str:

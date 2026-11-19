@@ -14,7 +14,7 @@ from . import db
 from .models import NewsSignalCard
 from .textfmt import clean_inline, is_bad_summary, normalize_text
 
-UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) xinxicha/0.1 (personal research)"
+UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) infogap/0.1 (personal research)"
 
 # ---------------- 正文抽取（bs4 启发式，URL 导入复用） ----------------
 

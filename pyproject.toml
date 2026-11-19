@@ -1,5 +1,5 @@
 [project]
-name = "xinxicha"
+name = "infogap"
 version = "0.1.0"
 description = "信息差：本地优先的求职情报与决策服务（采集→结构化→行情报告→差距分析→匹配→问答）"
 readme = "README.md"
@@ -29,7 +29,7 @@ desktop = ["pywebview>=5.1"]  # 桌面版原生窗口
 pack = ["pyinstaller>=6.6", "pillow>=10.0"]  # 打包工具链
 
 [project.scripts]
-xinxicha = "market_lens.cli:main"
+infogap = "market_lens.cli:main"
 
 [build-system]
 requires = ["hatchling"]

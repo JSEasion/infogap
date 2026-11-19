@@ -12,7 +12,7 @@ import time
 
 import httpx
 
-UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) xinxicha/0.1 (personal research)",
+UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) infogap/0.1 (personal research)",
       "Referer": "https://www.gaoxiaojob.com/"}
 
 BASE = "https://www.gaoxiaojob.com"

@@ -1,4 +1,4 @@
-"""生成桌面应用图标：favicon.svg → packaging/icons/Xinxicha.{icns,ico}
+"""生成桌面应用图标：favicon.svg → packaging/icons/InfoGap.{icns,ico}
 
 macOS 上运行（qlmanage 渲染 SVG + iconutil 生成 icns）。
 产物提交进仓库，Windows 构建机无需再生成。
@@ -33,7 +33,7 @@ def render_svg(size: int, out: Path) -> None:
 
 
 def build_icns(png1024: Path) -> Path:
-    iconset = OUT_DIR / "Xinxicha.iconset"
+    iconset = OUT_DIR / "InfoGap.iconset"
     shutil.rmtree(iconset, ignore_errors=True)
     iconset.mkdir(parents=True)
     img = Image.open(png1024).convert("RGBA")
@@ -41,14 +41,14 @@ def build_icns(png1024: Path) -> Path:
         img.resize((s, s), Image.LANCZOS).save(iconset / f"icon_{s}x{s}.png")
         if s <= 512:  # @2x 变体（最大 512@2x=1024）
             img.resize((s * 2, s * 2), Image.LANCZOS).save(iconset / f"icon_{s}x{s}@2x.png")
-    target = OUT_DIR / "Xinxicha.icns"
+    target = OUT_DIR / "InfoGap.icns"
     subprocess.run(["iconutil", "-c", "icns", str(iconset), "-o", str(target)], check=True)
     shutil.rmtree(iconset)
     return target
 
 
 def build_ico(png1024: Path) -> Path:
-    target = OUT_DIR / "Xinxicha.ico"
+    target = OUT_DIR / "InfoGap.ico"
     img = Image.open(png1024).convert("RGBA")
     img.save(target, sizes=ICO_SIZES)
     return target

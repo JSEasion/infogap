@@ -13,7 +13,7 @@ import time
 
 import httpx
 
-UA = {"User-Agent": "xinxicha/0.1 (personal research)"}
+UA = {"User-Agent": "infogap/0.1 (personal research)"}
 API = "https://api.github.com"
 
 # 内推条目相关性（AI/研发方向）

@@ -18,7 +18,7 @@ from bs4 import BeautifulSoup
 
 from ..textfmt import normalize_text
 
-UA = {"User-Agent": "xinxicha/0.1 (personal research)"}
+UA = {"User-Agent": "infogap/0.1 (personal research)"}
 
 
 # ---------------- 通用 RSS 板块 ----------------
