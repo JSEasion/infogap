@@ -97,7 +97,7 @@ def fetch_github_trending(lang: str = "python", max_items: int = 15) -> list[dic
         lang_txt = lang_node.get_text(strip=True) if lang_node else lang
         out.append({
             "kind": "tech", "source": "ghtrend",
-            "source_url": f"https://github.com{name}",
+            "source_url": f"https://github.com/{name}",
             "title": f"[trending:{lang_txt}] {name}",
             "body": f"{name}（{lang_txt}，⭐{stars}）\n{desc}"[:1500],
             "published_at": today,

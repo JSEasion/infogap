@@ -29,8 +29,10 @@ STAGING="$(mktemp -d)"
 trap 'rm -rf "$STAGING"' EXIT
 cp -R "$APP" "$STAGING/"
 ln -s /Applications "$STAGING/Applications"
+# CI 双架构出包时用 APP_ARCH 区分文件名（信息差-arm64.dmg / 信息差-x64.dmg）
+DMG="$ROOT/dist/$APP_NAME${APP_ARCH:+-$APP_ARCH}.dmg"
 hdiutil create -volname "$APP_NAME" -srcfolder "$STAGING" \
-  -ov -format UDZO "$ROOT/dist/$APP_NAME.dmg" >/dev/null
+  -ov -format UDZO "$DMG" >/dev/null
 
 echo "✔ 完成："
 ls -lh "$ROOT/dist" | grep -E "app|dmg"

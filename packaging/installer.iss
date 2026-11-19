@@ -28,7 +28,8 @@ PrivilegesRequired=admin
 ShowLanguageDialog=auto
 
 [Languages]
-Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
+; 简中是「非官方翻译」，Inno 官方安装不含该文件，由构建脚本下载到本目录
+Name: "chinesesimplified"; MessagesFile: "ChineseSimplified.isl"
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]

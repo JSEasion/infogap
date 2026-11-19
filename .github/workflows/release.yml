@@ -13,10 +13,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: macos-14, platform: mac-arm64 }   # Apple Silicon
-          - { os: macos-13, platform: mac-x64 }     # Intel
+          - { os: macos-15, platform: mac-arm64 }   # Apple Silicon
+          - { os: macos-13, platform: mac-x64 }     # Intel（最后的 x64 镜像）
           - { os: windows-latest, platform: win-x64 }
     runs-on: ${{ matrix.os }}
+    env:
+      APP_ARCH: ${{ matrix.platform }}  # dmg 文件名按架构区分后缀
     steps:
       - uses: actions/checkout@v4
 

@@ -22,7 +22,24 @@ if (-not (Test-Path $Iscc)) { $Iscc = "${env:ProgramFiles}\Inno Setup 6\ISCC.exe
 
 if (Test-Path $Iscc) {
   Write-Host "▶ Inno Setup 生成安装器"
-  & $Iscc "$PSScriptRoot\installer.iss"
+  # 简中语言包不在 Inno 官方安装里（非官方翻译），构建时下载；失败则生成英文安装器
+  $isl = "$PSScriptRoot\ChineseSimplified.isl"
+  if (-not (Test-Path $isl)) {
+    try {
+      Invoke-WebRequest -Uri "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/Unofficial/ChineseSimplified.isl" `
+        -OutFile $isl -UseBasicParsing
+    } catch { Write-Host "⚠ 中文语言包下载失败：$($_.Exception.Message)" }
+  }
+  if (Test-Path $isl) {
+    & $Iscc "$PSScriptRoot\installer.iss"
+  } else {
+    Write-Host "⚠ 退回英文安装器"
+    $tmp = "$PSScriptRoot\installer_en.iss"
+    (Get-Content "$PSScriptRoot\installer.iss" -Raw -Encoding UTF8) `
+      -replace 'Name: "chinesesimplified";[^\r\n]*\r?\n', '' | Set-Content $tmp -Encoding UTF8
+    & $Iscc $tmp
+    Remove-Item $tmp -ErrorAction SilentlyContinue
+  }
   if ($LASTEXITCODE -ne 0) { throw "Inno Setup 失败" }
 } else {
   Write-Host "⚠ 未找到 Inno Setup 6，改为输出 zip（免安装版）"
