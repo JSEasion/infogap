@@ -1,0 +1,42 @@
+[project]
+name = "market-lens"
+version = "0.1.0"
+description = "行业透镜：本地优先的求职情报与决策服务（采集→结构化→行情报告→差距分析→匹配→问答）"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "jinja2>=3.1",
+    "python-multipart>=0.0.9",
+    "pydantic>=2.6",
+    "openai>=1.30",
+    "httpx>=0.27",
+    "feedparser>=6.0",
+    "beautifulsoup4>=4.12",
+    "typer>=0.12",
+    "pyyaml>=6.0",
+    "jieba>=0.42",
+    "markdown>=3.6",
+    "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+dsh = ["deepseek-harness-sdk"]
+capture = ["playwright>=1.44"]
+desktop = ["pywebview>=5.1"]  # 桌面版原生窗口
+pack = ["pyinstaller>=6.6", "pillow>=10.0"]  # 打包工具链
+
+[project.scripts]
+market-lens = "market_lens.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/market_lens"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

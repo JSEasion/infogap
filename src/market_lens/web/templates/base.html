@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>信息差 · market-lens</title>
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/static/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="icon" href="/static/favicon-16.png" type="image/png" sizes="16x16">
+<link rel="apple-touch-icon" href="/static/favicon-180.png">
+<link rel="stylesheet" href="/static/style.css?v=4">
+<link rel="stylesheet" href="/static/ds.css?v=4">
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="logo">
+    <svg width="24" height="24" viewBox="0 0 64 64" aria-hidden="true">
+      <defs><linearGradient id="logo-bg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#4a7bff"/><stop offset="1" stop-color="#2447b8"/>
+      </linearGradient></defs>
+      <rect width="64" height="64" rx="14" fill="url(#logo-bg)"/>
+      <rect x="13" y="17.5" width="38" height="9" rx="4.5" fill="#fff"/>
+      <rect x="13" y="37.5" width="21.5" height="9" rx="4.5" fill="#fff" opacity=".78"/>
+      <rect x="34" y="37.5" width="17" height="9" rx="4.5" fill="#ffb020"/>
+    </svg>
+    信息差
+  </div>
+  <nav>
+    <a href="/" class="{{ 'active' if nav=='dashboard' }}">📊 仪表盘</a>
+    <a href="/jobs" class="{{ 'active' if nav=='jobs' }}">💼 岗位库</a>
+    <a href="/import" class="{{ 'active' if nav=='import' }}">🔌 数据接入</a>
+    <a href="/news" class="{{ 'active' if nav=='news' }}">📰 行业资讯</a>
+    <a href="/tech" class="{{ 'active' if nav=='tech' }}">🔬 前沿技术</a>
+    <a href="/quarantine" class="{{ 'active' if nav=='quarantine' }}">🧪 隔离区{% if quarantine_n %} <span class="ds-badge gold-b">{{ quarantine_n }}</span>{% endif %}</a>
+    <a href="/reports" class="{{ 'active' if nav=='reports' }}">📑 报告中心</a>
+    <a href="/qa" class="{{ 'active' if nav=='qa' }}">💬 数据问答</a>
+    <a href="/profile" class="{{ 'active' if nav=='profile' }}">🎯 偏好画像</a>
+    <a href="/settings" class="{{ 'active' if nav=='settings' }}">⚙️ 系统设置</a>
+  </nav>
+  <div class="sidebar-foot">market-lens v0.2 · 数据全部本地存储<br>
+    {% if scheduler_next %}⏰ 下次自动采集 {{ scheduler_next }}{% endif %}</div>
+</aside>
+<main class="main">
+  <div class="ds-topbar">
+    <button class="ds-iconbtn" onclick="toggleTheme()" title="切换深浅色">🌓</button>
+    <a class="ds-iconbtn" href="/settings#llm" title="模型配置">🤖</a>
+  </div>
+  {% if not llm_ready %}
+  <div class="banner-warn">⚠️ 未检测到可用的模型通道。当前运行在 <b>规则模式</b>：
+    采集/评分/统计可用，LLM 裁决与信号卡增强不可用。到
+    <a href="/settings">系统设置 → 模型接入</a> 一键配置。</div>
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
+<script src="/static/app.js?v=3"></script>
+<script src="/static/ui.js?v=2"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% import "_sigcard.html" as sc %}
+{% block content %}
+<div class="ds-pagehead">
+  <div>
+    <h1 class="title">隔离区 <span class="ds-badge gold-c">{{ stats.total }} 条待复核</span></h1>
+    <div class="desc">按含金量从高到低排列。复核动作会落库并<b>校准渠道权重</b>——你的判断让系统越来越准。</div>
+  </div>
+  <div class="actions"><button class="ds-btn plain" id="btn-rescore">♻️ 重放质量门（清积压）</button></div>
+</div>
+
+{% if not judge_ok %}
+<div style="background:var(--ds-danger-soft);border-left:3px solid var(--ds-danger);
+     padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:var(--ds-fs-sm)">
+  ⚠️ LLM 裁决通道未生效（从未成功调用过），灰区按<b>门中值自动分流</b>，无需逐条人工复核。
+  如需更准的裁决请到 <a href="/settings">设置页</a> 检查模型通道。
+</div>
+{% endif %}
+
+{% if items %}
+<div class="ds-filterbar">
+  <span class="ds-badge gold-a">≥中值 {{ stats.promotable }} 条（大概率可恢复）</span>
+  <span class="ds-badge sig-none">&lt;低线 {{ stats.low }} 条（建议丢弃）</span>
+  <span style="flex:1"></span>
+  <button class="ds-btn sm" id="btn-promote-mid">✅ 一键恢复 ≥中值（{{ stats.promotable }}）</button>
+  <button class="ds-btn danger sm" id="btn-discard-low">🗑 一键丢弃 &lt;低线（{{ stats.low }}）</button>
+</div>
+
+<div class="ds-filterbar">
+  {% for k, label in [('', '全部'), ('job', '岗位'), ('news', '资讯'), ('tech', '技术')] %}
+    {% if kind == k %}<b class="ds-badge gold-a">{{ label }}</b>
+    {% else %}<a class="ds-badge sig-none" href="/quarantine{% if k %}?kind={{ k }}{% endif %}">{{ label }}</a>{% endif %}
+  {% endfor %}
+  <span style="flex:1"></span>
+  <label>
+    <input type="checkbox" id="sel-all"> 全选本页
+  </label>
+  <button class="ds-btn sm" id="btn-batch-promote" disabled>恢复所选</button>
+  <button class="ds-btn danger sm" id="btn-batch-discard" disabled>丢弃所选</button>
+</div>
+
+{% for it in items %}
+<div class="ds-sigcard qreview" data-raw="{{ it.id }}">
+  <input type="checkbox" class="qsel" data-id="{{ it.id }}">
+  <div class="qbody">
+    <div class="head">
+      <span class="ds-badge gold-c">{{ it.kind }}</span>
+      <span class="ds-badge sig-none">{{ it.source }}</span>
+      {% if it.gold_score %}<span class="ds-badge {{ 'gold-a' if it.gold_score >= 80 else 'gold-b' if it.gold_score >= 65 else 'gold-c' }}">gold {{ it.gold_score | round(0) }}</span>{% endif %}
+      {% if it.score and it.score.scam_risk %}<span class="ds-badge sig-layoff">⚠️ 疑似诈骗</span>{% endif %}
+      <span class="muted sm">{{ (it.published_at or it.fetched_at or '')[:10] }}</span>
+    </div>
+    <div class="one">{{ it.title or '(无标题)' }}</div>
+    {% if it.score and it.score.dims %}
+    {% set dimzh = {'credibility': '可信', 'scarcity': '稀缺', 'completeness': '完备', 'evidence': '证据',
+      'freshness': '时效', 'relevance': '相关', 'cross': '交叉', 'signal': '含量'} %}
+    {% set weakest = it.score.dims | sort(attribute='score') %}
+    <div class="sm" style="margin:4px 0">
+      <span style="color:var(--ds-danger)">短板：{{ dimzh.get(weakest[0].key, weakest[0].key) }} {{ weakest[0].score | round(0) }}
+      {% if weakest | length > 1 %} · {{ dimzh.get(weakest[1].key, weakest[1].key) }} {{ weakest[1].score | round(0) }}{% endif %}</span>
+      <span class="muted">｜全文维度：</span><span class="muted">{% for d in it.score.dims %}{{ dimzh.get(d.key, d.key) }} {{ d.score | round(0) }}
+      {%- if not loop.last %} · {% endif %}{% endfor %}</span>
+    </div>
+    {% endif %}
+    {% if it.score and it.score.judge_note %}<div class="sm muted">裁决：{{ it.score.judge_note }}</div>{% endif %}
+    <details><summary class="sm">查看原文</summary>
+      <div class="jd-body" style="margin-top:6px">{{ it.body | to_paragraphs }}</div>
+    </details>
+    {% if it.source_url %}<p class="sm" style="margin:6px 0 0"><a href="{{ it.source_url }}" target="_blank" rel="noopener">原文链接</a></p>{% endif %}
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="ds-btn sm" data-promote="{{ it.id }}">✅ 恢复进精选</button>
+      <button class="ds-btn danger sm" data-discard="{{ it.id }}">🗑 永久丢弃</button>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+{{ sc.pager('/quarantine', {'kind': kind}, page, pages) }}
+{% else %}
+<div class="ds-empty">
+  <div class="icon">✨</div>
+  <div class="hint">隔离区是空的——要么还没采集，要么低分数据都处理完了</div>
+  <div class="action"><a class="ds-btn" href="/import">去采集数据</a></div>
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById("btn-rescore").onclick = function () {
+  TaskCenter.submit("rescore", {}, "重放质量门", this);
+};
+function selIds() { return [...document.querySelectorAll(".qsel:checked")].map(b => b.dataset.id); }
+function refreshBatchBar() {
+  const n = selIds().length;
+  document.getElementById("btn-batch-promote").disabled = !n;
+  document.getElementById("btn-batch-discard").disabled = !n;
+  document.getElementById("btn-batch-promote").textContent = n ? `恢复所选（${n}）` : "恢复所选";
+  document.getElementById("btn-batch-discard").textContent = n ? `丢弃所选（${n}）` : "丢弃所选";
+}
+document.querySelectorAll(".qsel").forEach(b => b.onchange = refreshBatchBar);
+document.getElementById("sel-all").onchange = function () {
+  document.querySelectorAll(".qsel").forEach(b => b.checked = this.checked);
+  refreshBatchBar();
+};
+function submitBatch(payload, btn) {
+  return dsFetch("/api/quarantine/batch", { method: "POST", json: payload, trigger: btn,
+    okToast: "批量任务已提交，进度见任务中心" });
+}
+document.getElementById("btn-batch-promote").onclick = function () {
+  const ids = selIds();
+  if (!ids.length) return;
+  dsConfirm("批量恢复进精选", `将恢复 ${ids.length} 条进精选并发布。`, () =>
+    submitBatch({ action: "promote", ids }, this), "恢复", false);
+};
+document.getElementById("btn-batch-discard").onclick = function () {
+  const ids = selIds();
+  if (!ids.length) return;
+  dsConfirm("批量丢弃", `将永久丢弃 ${ids.length} 条（原始记录保留日志）。`, () =>
+    submitBatch({ action: "discard", ids }, this), "丢弃", true);
+};
+document.getElementById("btn-promote-mid").onclick = function () {
+  dsConfirm("一键恢复高分条目", "把所有含金量 ≥门中值的隔离条目恢复进精选并发布。", () =>
+    submitBatch({ action: "promote", score_mode: "above_mid" }, this), "恢复", false);
+};
+document.getElementById("btn-discard-low").onclick = function () {
+  dsConfirm("一键丢弃低分条目", "把所有含金量 <低线的隔离条目永久丢弃。", () =>
+    submitBatch({ action: "discard", score_mode: "below_lo" }, this), "丢弃", true);
+};
+document.querySelectorAll("[data-promote]").forEach(b => b.onclick = async function () {
+  await dsFetch(`/api/quarantine/${b.dataset.promote}/promote`, { method: "POST", trigger: b });
+  b.closest(".ds-sigcard").remove();
+});
+document.querySelectorAll("[data-discard]").forEach(b => b.onclick = function () {
+  dsConfirm("永久丢弃", "该条将从隔离区移除且不再参与统计（原始记录保留日志）。", async () => {
+    await dsFetch(`/api/quarantine/${b.dataset.discard}/discard`, { method: "POST" });
+    b.closest(".ds-sigcard").remove();
+  }, "丢弃", true);
+});
+</script>
+{% endblock %}

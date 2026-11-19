@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}偏好设置{% endblock %}
+{% block content %}
+<h1>我的画像与偏好</h1>
+<form method="post" action="/profile">
+<div class="grid-2">
+  <div class="panel">
+    <h3>背景画像</h3>
+    <label>称呼</label><input name="name" value="{{ p.name }}">
+    <label>工作年限</label><input name="years_exp" type="number" min="0" max="40" value="{{ p.years_exp }}">
+    <label>目标岗位</label><input name="target_role" value="{{ p.target_role }}">
+    <label>已有技能（规范id，逗号分隔，见岗位库技能标签）</label>
+    <input name="skills" value="{{ p.skills | join(',') }}">
+    <label>背景描述（用于 LLM 报告的画像输入）</label>
+    <textarea name="background" rows="5">{{ p.background }}</textarea>
+  </div>
+
+  <div class="panel">
+    <h3>硬性门槛（一票否决）</h3>
+    <label>月薪底线（K，留空不限）</label>
+    <input name="salary_floor_k" value="{{ p.hard.salary_floor_k if p.hard.salary_floor_k is not none else '' }}">
+    <label>目标城市（逗号分隔，可含「远程」）</label>
+    <input name="cities" value="{{ p.hard.cities | join(',') }}">
+    <label>加班容忍上限</label>
+    <select name="overtime_max">
+      {% for v, desc in [(0,'L0 · 必须965/双休/弹性'),(1,'L1 · 常规偶尔加班'),(2,'L2 · 常态加班'),(3,'L3 · 大小周/995可接受'),(4,'L4 · 不限')] %}
+      <option value="{{ v }}" {{ 'selected' if p.hard.overtime_max==v }}>{{ desc }}</option>
+      {% endfor %}
+      <option value="" {{ 'selected' if p.hard.overtime_max is none }}>不限</option>
+    </select>
+    <p class="muted">薪资未标/城市未知/WLB无信号的岗位不会被否决，只会在匹配说明里提醒。</p>
+  </div>
+
+  <div class="panel">
+    <h3>软性偏好（加权打分）</h3>
+    <label>工作模式</label>
+    <select name="work_mode">
+      {% for v, desc in [('any','不限'),('remote','远程优先'),('hybrid','混合优先'),('onsite','坐班优先')] %}
+      <option value="{{ v }}" {{ 'selected' if p.prefs.work_mode==v }}>{{ desc }}</option>
+      {% endfor %}
+    </select>
+    <label>偏好公司类型（逗号分隔：bigtech/unicorn/startup/foreign/soe/traditional）</label>
+    <input name="company_types" value="{{ p.prefs.company_types | join(',') }}">
+    <label>想深耕的技能（逗号分隔，如 langgraph,mcp,rag）</label>
+    <input name="tech_like" value="{{ p.prefs.tech_like | join(',') }}">
+    <label>想避开的技能/方向</label>
+    <input name="tech_avoid" value="{{ p.prefs.tech_avoid | join(',') }}">
+  </div>
+
+  <div class="panel">
+    <h3>维度权重（1-5）</h3>
+    <label>工作强度 WLB：<input name="w_wlb" type="number" min="1" max="5" value="{{ p.prefs.weights.wlb }}" class="wnum"></label>
+    <label>工作模式：<input name="w_work_mode" type="number" min="1" max="5" value="{{ p.prefs.weights.work_mode }}" class="wnum"></label>
+    <label>公司类型：<input name="w_company_type" type="number" min="1" max="5" value="{{ p.prefs.weights.company_type }}" class="wnum"></label>
+    <label>技术方向：<input name="w_tech_fit" type="number" min="1" max="5" value="{{ p.prefs.weights.tech_fit }}" class="wnum"></label>
+    <label>薪资余量：<input name="w_salary_margin" type="number" min="1" max="5" value="{{ p.prefs.weights.salary_margin }}" class="wnum"></label>
+    <p class="muted">保存后岗位库的匹配度立即按新偏好重算。</p>
+  </div>
+</div>
+<button class="btn btn-lg">保存画像与偏好</button>
+</form>
+{% endblock %}

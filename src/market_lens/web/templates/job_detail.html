@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="ds-pagehead">
+  <div>
+    <h1 class="title">{{ job.title or '(未识别标题)' }}</h1>
+    <div class="desc">{{ job.company or '—' }} · {{ job.city or '—' }} · {{ job.salary_raw or '薪资未披露' }}
+      {% if job.published_at %} · 发布 {{ job.published_at[:10] }}{% endif %}</div>
+  </div>
+  <div class="actions">
+    <span class="badge {{ badge_cls }}">{{ badge }}</span>
+    {% if job.gold_score %}<span class="ds-badge gold-a">🏅 含金 {{ job.gold_score | round(0) }}</span>{% endif %}
+    {% if job.referral_code %}<span class="ds-badge sig-hiring">内推码 {{ job.referral_code }}</span>{% endif %}
+    {% if job.deadline %}<span class="ds-badge sig-layoff">截止 {{ job.deadline }}</span>{% endif %}
+    <button class="ds-btn danger sm" id="btn-del">删除</button>
+  </div>
+</div>
+
+<div class="detail-grid">
+  <div class="panel">
+    <h3>基础信息</h3>
+    <table class="kv">
+      <tr><td>公司</td><td>{{ job.company or '—' }}</td></tr>
+      <tr><td>城市</td><td>{{ job.city or '—' }}</td></tr>
+      <tr><td>薪资</td><td>{{ job.salary_raw or '—' }}
+        {% if job.salary_min_k %}（月 {{ job.salary_min_k }}-{{ job.salary_max_k or '∞' }}K × {{ job.salary_months }}薪 ≈ 年 {{ job.annual_min_wan or '?' }}-{{ job.annual_max_wan or '?' }}万）{% endif %}</td></tr>
+      <tr><td>经验/学历</td><td>{{ job.experience or '—' }} / {{ job.education or '—' }}</td></tr>
+      <tr><td>工作模式</td><td>{{ {'remote':'远程','hybrid':'混合','onsite':'坐班','unknown':'未知'}.get(job.work_mode,'未知') }}</td></tr>
+      <tr><td>公司类型</td><td>{{ {'bigtech':'大厂','unicorn':'独角兽','startup':'创业','foreign':'外企','soe':'国企','traditional':'传统企业','unknown':'未知'}.get(job.company_type,'未知') }}</td></tr>
+      {% if job.contact %}<tr><td>投递</td><td>{{ job.contact }}</td></tr>{% endif %}
+      {% if job.source_url %}<tr><td>原文</td><td><a href="{{ job.source_url }}" target="_blank" rel="noopener">查看来源</a></td></tr>{% endif %}
+      <tr><td>来源</td><td>{{ job.source }} · {{ job.extract_method }}{% if job.raw_id %} · raw #{{ job.raw_id }}（可溯源）{% endif %}</td></tr>
+      <tr><td>技能标签</td><td>{% for s in skills %}<span class="chip">{{ s }}</span>{% endfor %}</td></tr>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h3>匹配度分解 <span class="muted">（按我的偏好加权）</span></h3>
+    {% if match.verdict == 'veto' %}
+    <div class="flash-err">否决理由：{% for r in match.reasons %}{{ r }}{% if not loop.last %}；{% endif %}{% endfor %}</div>
+    {% else %}
+    <div class="flash-ok">综合匹配 {{ match.score }} 分</div>
+    {% endif %}
+    <div class="ds-dims">
+      {% for d in match.dims %}
+      <div class="ds-dim">
+        <span>{{ d.name }}</span>
+        <span class="bar"><i style="width:{{ (d.score*100)|round }}%"></i></span>
+        <span>{{ (d.score*100)|round }}</span>
+        <span class="why">{{ d.note }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% if gold %}
+  <div class="panel">
+    <h3>含金量分解 <span class="muted sm">（七维评分，每个分数可解释）</span></h3>
+    <div class="ds-dims">
+      {% for d in gold.dims %}
+      <div class="ds-dim">
+        <span>{{ {credibility:'来源可信', scarcity:'信息差', completeness:'完备度', evidence:'证据链',
+                  freshness:'时效', relevance:'相关性', cross:'交叉验证', signal:'信息含量'}.get(d.key, d.key) }}</span>
+        <span class="bar"><i style="width:{{ d.score | round(0) }}%"></i></span>
+        <span>{{ d.score | round(0) }}</span>
+        <span class="why">{{ d.reason }}{% if d.weight %}（权重 {{ d.weight }}）{% endif %}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% if gold.judge_used %}<p class="sm muted">🤖 LLM 裁决：{{ gold.judge_note }}</p>{% endif %}
+    {% if gold.scam_risk %}<div class="flash-err">⚠️ 反诈骗命中：{{ gold.scam_rules | join('、') }}</div>{% endif %}
+  </div>
+  {% endif %}
+
+  <div class="panel">
+    <h3>WLB 信号（加班程度 {{ ['L0','L1','L2','L3','L4'][job.wlb_level] if job.wlb_level is not none else '未知' }}）</h3>
+    <p class="muted">{{ job.wlb_basis or 'JD 中没有可判断的 WLB 信号' }}</p>
+    {% if signals %}
+    <table>
+      <tr><th>信号</th><th>性质</th><th>原文上下文</th></tr>
+      {% for s in signals %}
+      <tr><td>{{ s.label }}</td>
+          <td>{{ {'pos':'🟢正面','neg':'🔴负面','llm':'🤖模型'}[s.kind] }}</td>
+          <td class="quote">…{{ s.quote }}…</td></tr>
+      {% endfor %}
+    </table>
+    {% endif %}
+  </div>
+
+  {% if job.description_zh %}
+  <div class="panel">
+    <h3>中文摘要 {{ '（外文 JD 自动翻译）' if job.description != job.description_zh else '' }}</h3>
+    <p class="jd-zh">{{ job.description_zh }}</p>
+  </div>
+  {% endif %}
+
+  <div class="panel">
+    <h3>JD 原文 <span class="muted sm">（已规范化排版：段落对齐、无伪影空格）</span></h3>
+    <div class="jd-body">
+      {% for p in job.description | to_paragraphs %}<p>{{ p }}</p>{% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById("btn-del").onclick = function () {
+  dsConfirm("删除岗位", "确认删除「{{ job.title | e }}」？该操作不可恢复。", async () => {
+    await dsFetch("/jobs/{{ job.id }}/delete", { method: "POST" });
+    location.href = "/jobs";
+  }, "删除", true);
+};
+</script>
+{% endblock %}

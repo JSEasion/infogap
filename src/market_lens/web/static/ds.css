@@ -1,0 +1,252 @@
+/* ============================================================
+   设计系统 ds.css — tokens + 企业级组件库（浅色/深色主题）
+   挂载在 style.css 之上：旧类继续生效，新组件走 ds- 前缀
+   ============================================================ */
+:root {
+  /* 色彩 tokens */
+  --ds-primary: #3565e0; --ds-primary-ink: #fff; --ds-primary-soft: #eaf0fe;
+  --ds-success: #16a34a; --ds-success-soft: #ecfdf3;
+  --ds-warning: #d97706; --ds-warning-soft: #fff7e6;
+  --ds-danger: #dc2626;  --ds-danger-soft: #fef2f2;
+  --ds-info: #0891b2;    --ds-info-soft: #ecfeff;
+  --ds-gold: #b45309;    --ds-gold-soft: #fef3c7;
+  /* 字号/间距/圆角/阴影 */
+  --ds-fs-xs: 11px; --ds-fs-sm: 12px; --ds-fs-md: 13px; --ds-fs-lg: 15px; --ds-fs-xl: 20px;
+  --ds-sp-1: 4px; --ds-sp-2: 8px; --ds-sp-3: 12px; --ds-sp-4: 16px; --ds-sp-5: 24px;
+  --ds-radius: 10px; --ds-radius-sm: 6px;
+  --ds-shadow-1: 0 1px 2px rgba(16,24,40,.05);
+  --ds-shadow-2: 0 4px 16px rgba(16,24,40,.12);
+  --ds-z-nav: 100; --ds-z-drawer: 200; --ds-z-modal: 300; --ds-z-toast: 400;
+  --ds-focus: 0 0 0 3px rgba(53,101,224,.25);
+  --ds-speed: .18s;
+}
+[data-theme="dark"] {
+  --bg: #10141f; --card: #1a2130; --ink: #e5e9f2; --muted: #8b94a8; --line: #2a3247;
+  --ds-primary-soft: #1d2a4d; --ds-success-soft: #0d2b1a; --ds-warning-soft: #33260a;
+  --ds-danger-soft: #3a1414; --ds-info-soft: #0a2730; --ds-gold-soft: #33260a;
+}
+[data-theme="dark"] th { background: #202839; }
+[data-theme="dark"] tr:hover td { background: #202839; }
+[data-theme="dark"] .qa-hist-head:hover { background: #202839; }
+
+/* ---------------- 按钮 ---------------- */
+.ds-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  font: inherit; font-size: var(--ds-fs-md); font-weight: 500;
+  padding: 7px 14px; border-radius: var(--ds-radius-sm);
+  border: 1px solid var(--ds-primary); background: var(--ds-primary); color: var(--ds-primary-ink);
+  cursor: pointer; transition: all var(--ds-speed); white-space: nowrap; text-decoration: none;
+}
+.ds-btn:hover { filter: brightness(1.08); text-decoration: none; }
+.ds-btn:focus-visible { outline: none; box-shadow: var(--ds-focus); }
+.ds-btn.plain { background: var(--card); color: var(--ink); border-color: var(--line); }
+.ds-btn.plain:hover { border-color: var(--ds-primary); color: var(--ds-primary); }
+.ds-btn.danger { background: var(--ds-danger); border-color: var(--ds-danger); }
+.ds-btn.ghost { background: transparent; border-color: transparent; color: var(--ds-primary); }
+.ds-btn.sm { padding: 4px 10px; font-size: var(--ds-fs-sm); }
+.ds-btn:disabled, .ds-btn.loading { opacity: .55; cursor: not-allowed; pointer-events: none; }
+.ds-btn.loading::after {
+  content: ""; width: 12px; height: 12px; border: 2px solid currentColor;
+  border-top-color: transparent; border-radius: 50%; animation: ds-spin .7s linear infinite;
+}
+@keyframes ds-spin { to { transform: rotate(360deg); } }
+
+/* ---------------- 徽章体系 ---------------- */
+.ds-badge {
+  display: inline-flex; align-items: center; gap: 4px; font-size: var(--ds-fs-xs);
+  font-weight: 600; padding: 2px 8px; border-radius: 999px; line-height: 1.6; white-space: nowrap;
+}
+.ds-badge.gold-a { background: var(--ds-gold-soft); color: var(--ds-gold); }
+.ds-badge.gold-b { background: var(--ds-primary-soft); color: var(--ds-primary); }
+.ds-badge.gold-c { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+.ds-badge.sig-funding, .ds-badge.sig-hiring { background: var(--ds-success-soft); color: var(--ds-success); }
+.ds-badge.sig-layoff { background: var(--ds-danger-soft); color: var(--ds-danger); }
+.ds-badge.sig-release, .ds-badge.sig-tech { background: var(--ds-info-soft); color: var(--ds-info); }
+.ds-badge.sig-policy { background: var(--ds-warning-soft); color: var(--ds-warning); }
+.ds-badge.sig-none { background: var(--bg); color: var(--muted); }
+.ds-badge.grp-official { background: var(--ds-primary-soft); color: var(--ds-primary); }
+.ds-badge.grp-community { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+.ds-badge.grp-scarce { background: var(--ds-gold-soft); color: var(--ds-gold); }
+.ds-badge.grp-tech { background: var(--ds-info-soft); color: var(--ds-info); }
+
+/* ---------------- 页头 ---------------- */
+.ds-pagehead { display: flex; align-items: flex-start; justify-content: space-between;
+  gap: var(--ds-sp-4); margin-bottom: var(--ds-sp-5); flex-wrap: wrap; }
+.ds-pagehead .title { font-size: var(--ds-fs-xl); font-weight: 700; margin: 0; }
+.ds-pagehead .desc { color: var(--muted); font-size: var(--ds-fs-md); margin-top: 4px; max-width: 640px; }
+.ds-pagehead .actions { display: flex; gap: var(--ds-sp-2); flex-wrap: wrap; }
+
+/* ---------------- 过滤工具条 ---------------- */
+.ds-filterbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--ds-radius);
+  padding: 10px var(--ds-sp-3); margin-bottom: 10px; }
+/* 对冲 style.css 的全局 input{width:100%}，否则复选框会把工具条撑变形 */
+.ds-filterbar input[type="checkbox"] { width: auto; margin: 0; }
+.ds-filterbar label { display: flex; align-items: center; gap: 6px; margin: 0;
+  font-weight: 400; font-size: var(--ds-fs-sm); }
+
+/* ---------------- 统计卡 ---------------- */
+.ds-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--ds-sp-3); margin-bottom: var(--ds-sp-4); }
+.ds-stat { background: var(--card); border: 1px solid var(--line); border-radius: var(--ds-radius);
+  padding: var(--ds-sp-4); box-shadow: var(--ds-shadow-1); }
+.ds-stat .num { font-size: 24px; font-weight: 700; line-height: 1.2; }
+.ds-stat .lbl { color: var(--muted); font-size: var(--ds-fs-sm); margin-top: 2px; }
+.ds-stat .trend { font-size: var(--ds-fs-xs); margin-top: 6px; }
+.ds-stat .trend.up { color: var(--ds-success); } .ds-stat .trend.down { color: var(--ds-danger); }
+
+/* ---------------- Tabs ---------------- */
+.ds-tabs { display: flex; gap: var(--ds-sp-1); border-bottom: 1px solid var(--line);
+  margin-bottom: var(--ds-sp-4); flex-wrap: wrap; }
+.ds-tab { padding: 8px 14px; font-size: var(--ds-fs-md); color: var(--muted); cursor: pointer;
+  border-bottom: 2px solid transparent; background: none; border-top: none; border-left: none;
+  border-right: none; font-family: inherit; transition: color var(--ds-speed); }
+.ds-tab:hover { color: var(--ink); }
+.ds-tab.active { color: var(--ds-primary); border-bottom-color: var(--ds-primary); font-weight: 600; }
+.ds-tabpanel[hidden] { display: none; }
+
+/* ---------------- 进度条 ---------------- */
+.ds-progress { background: var(--bg); border-radius: 999px; height: 8px; overflow: hidden;
+  border: 1px solid var(--line); }
+.ds-progress > i { display: block; height: 100%; background: var(--ds-primary);
+  border-radius: 999px; transition: width .4s ease; }
+.ds-progress.indet > i { width: 34% !important; animation: ds-indet 1.2s ease-in-out infinite; }
+@keyframes ds-indet { 0% { margin-left: -34%; } 100% { margin-left: 100%; } }
+.ds-progress-steps { display: flex; gap: var(--ds-sp-2); align-items: center; flex-wrap: wrap; }
+.ds-step { font-size: var(--ds-fs-xs); color: var(--muted); display: inline-flex; gap: 4px; align-items: center; }
+.ds-step.active { color: var(--ds-primary); font-weight: 600; }
+
+/* ---------------- 骨架屏 ---------------- */
+.ds-skeleton { background: linear-gradient(90deg, var(--bg) 25%, var(--line) 50%, var(--bg) 75%);
+  background-size: 200% 100%; animation: ds-shimmer 1.4s infinite; border-radius: var(--ds-radius-sm); }
+@keyframes ds-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.ds-skeleton.line { height: 14px; margin: 8px 0; }
+.ds-skeleton.block { height: 120px; margin: 10px 0; }
+
+/* ---------------- 空态 ---------------- */
+.ds-empty { text-align: center; padding: 48px var(--ds-sp-4); color: var(--muted); }
+.ds-empty .icon { font-size: 40px; margin-bottom: var(--ds-sp-3); opacity: .6; }
+.ds-empty .hint { font-size: var(--ds-fs-md); margin-bottom: var(--ds-sp-4); }
+.ds-empty .action { margin-top: var(--ds-sp-2); }
+
+/* ---------------- Modal / Drawer ---------------- */
+.ds-modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,.45);
+  z-index: var(--ds-z-modal); display: flex; align-items: center; justify-content: center;
+  padding: var(--ds-sp-4); animation: ds-fade .15s ease; }
+@keyframes ds-fade { from { opacity: 0; } }
+.ds-modal { background: var(--card); border-radius: var(--ds-radius); width: 100%;
+  max-width: 520px; box-shadow: var(--ds-shadow-2); max-height: 86vh; display: flex;
+  flex-direction: column; }
+.ds-modal-head { padding: var(--ds-sp-4) var(--ds-sp-5); font-weight: 600;
+  border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
+.ds-modal-body { padding: var(--ds-sp-5); overflow-y: auto; }
+.ds-modal-foot { padding: var(--ds-sp-3) var(--ds-sp-5); border-top: 1px solid var(--line);
+  display: flex; justify-content: flex-end; gap: var(--ds-sp-2); }
+
+/* ---------------- Toast ---------------- */
+#ds-toasts { position: fixed; top: 16px; right: 16px; z-index: var(--ds-z-toast);
+  display: flex; flex-direction: column; gap: 8px; max-width: 380px; }
+.ds-toast { background: var(--card); border: 1px solid var(--line); border-left: 3px solid var(--ds-info);
+  border-radius: var(--ds-radius-sm); padding: 10px 14px; font-size: var(--ds-fs-md);
+  box-shadow: var(--ds-shadow-2); animation: ds-slide-in .25s ease; cursor: pointer; }
+.ds-toast.ok { border-left-color: var(--ds-success); }
+.ds-toast.err { border-left-color: var(--ds-danger); }
+.ds-toast .t { font-weight: 600; } .ds-toast .m { color: var(--muted); font-size: var(--ds-fs-sm); }
+@keyframes ds-slide-in { from { transform: translateX(24px); opacity: 0; } }
+.ds-toast.leaving { transition: all .3s; opacity: 0; transform: translateX(24px); }
+
+/* ---------------- 任务中心（顶栏指示器 + 抽屉） ---------------- */
+.ds-taskbar { position: fixed; right: 20px; bottom: 20px; z-index: var(--ds-z-drawer);
+  display: flex; flex-direction: column; align-items: flex-end; gap: var(--ds-sp-2); }
+.ds-task-fab { display: inline-flex; align-items: center; gap: 8px; background: var(--ds-primary);
+  color: #fff; border-radius: 999px; padding: 10px 18px; font-size: var(--ds-fs-md);
+  box-shadow: var(--ds-shadow-2); cursor: pointer; border: none; font-family: inherit; }
+.ds-task-fab .dot { width: 8px; height: 8px; background: #ffd166; border-radius: 50%;
+  animation: ds-pulse 1.2s infinite; }
+@keyframes ds-pulse { 50% { opacity: .3; } }
+.ds-task-panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--ds-radius);
+  width: min(400px, calc(100vw - 40px)); max-height: 60vh; overflow-y: auto;
+  box-shadow: var(--ds-shadow-2); padding: var(--ds-sp-3); }
+.ds-task-item { border: 1px solid var(--line); border-radius: var(--ds-radius-sm);
+  padding: 10px var(--ds-sp-3); margin-bottom: 8px; }
+.ds-task-item .row1 { display: flex; justify-content: space-between; gap: 8px;
+  font-size: var(--ds-fs-md); font-weight: 600; }
+.ds-task-item .stage { color: var(--muted); font-size: var(--ds-fs-xs); margin: 4px 0; }
+.ds-task-item.done { opacity: .68; } .ds-task-item.failed { border-color: var(--ds-danger); }
+
+/* ---------------- 表单校验态 ---------------- */
+.ds-field { margin-bottom: var(--ds-sp-4); }
+.ds-field label { margin-bottom: 4px; }
+.ds-field.invalid input, .ds-field.invalid select { border-color: var(--ds-danger); }
+.ds-field .err-msg { color: var(--ds-danger); font-size: var(--ds-fs-xs); margin-top: 3px; display: none; }
+.ds-field.invalid .err-msg { display: block; }
+.ds-hint { color: var(--muted); font-size: var(--ds-fs-xs); margin-top: 3px; }
+
+/* ---------------- 信号卡（资讯） ---------------- */
+.ds-sigcard { background: var(--card); border: 1px solid var(--line); border-radius: var(--ds-radius);
+  padding: var(--ds-sp-4); margin-bottom: 10px; transition: box-shadow var(--ds-speed); }
+.ds-sigcard:hover { box-shadow: var(--ds-shadow-1); }
+.ds-sigcard .head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ds-sigcard .one { font-size: var(--ds-fs-lg); font-weight: 600; margin: 8px 0 4px; }
+.ds-sigcard .points { margin: 8px 0 0; padding-left: 18px; color: var(--ink); }
+.ds-sigcard .points li { margin: 3px 0; font-size: var(--ds-fs-md); }
+.ds-sigcard .impact { background: var(--ds-primary-soft); color: var(--ds-primary);
+  border-radius: var(--ds-radius-sm); padding: 6px 10px; font-size: var(--ds-fs-sm); margin-top: 10px; }
+.ds-sigcard .meta { color: var(--muted); font-size: var(--ds-fs-xs); margin-top: 8px;
+  display: flex; gap: 12px; flex-wrap: wrap; }
+.ds-sigcard details { margin-top: 8px; } .ds-sigcard details summary { cursor: pointer;
+  color: var(--muted); font-size: var(--ds-fs-sm); }
+.ds-sigcard .orig { font-size: var(--ds-fs-sm); color: var(--muted); margin-top: 2px; }
+.ds-sigcard .orig a { margin-left: 6px; white-space: nowrap; }
+.ds-sigcard .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+
+/* ---------------- 隔离区复核卡（复选框列 + 主体） ---------------- */
+.ds-sigcard.qreview { display: flex; gap: 10px; }
+/* 对冲 style.css 的全局 input{width:100%;padding;margin}，否则复选框独占整卡宽度 */
+.ds-sigcard.qreview > input[type="checkbox"] { width: auto; min-width: 0;
+  margin: 4px 0 0; padding: 0; flex: none; }
+.ds-sigcard.qreview > .qbody { flex: 1; min-width: 0; }
+
+/* ---------------- JD 原文段落化排版 ---------------- */
+.jd-body { font-size: 14px; line-height: 1.75; }
+.jd-body p { margin: 0 0 12px; white-space: pre-wrap; word-break: break-word; }
+.jd-body p:last-child { margin-bottom: 0; }
+
+/* ---------------- 渠道卡片（数据接入中心） ---------------- */
+.ds-channels { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--ds-sp-3); }
+.ds-channel { background: var(--card); border: 1px solid var(--line); border-radius: var(--ds-radius);
+  padding: var(--ds-sp-4); display: flex; flex-direction: column; gap: 8px; }
+.ds-channel .head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.ds-channel .name { font-weight: 600; font-size: var(--ds-fs-md); }
+.ds-channel .foot { display: flex; justify-content: space-between; align-items: center;
+  margin-top: auto; padding-top: 8px; }
+.ds-channel .health { display: inline-flex; align-items: center; gap: 5px;
+  font-size: var(--ds-fs-xs); color: var(--muted); }
+.ds-channel .health .led { width: 8px; height: 8px; border-radius: 50%; background: var(--ds-success); }
+.ds-channel .health.warn .led { background: var(--ds-warning); }
+.ds-channel .health.bad .led { background: var(--ds-danger); }
+
+/* ---------------- 顶栏（任务指示 + 主题切换） ---------------- */
+.ds-topbar { display: flex; justify-content: flex-end; gap: var(--ds-sp-2); margin-bottom: var(--ds-sp-3); }
+.ds-iconbtn { background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+  width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 15px; }
+.ds-iconbtn:hover { border-color: var(--ds-primary); }
+
+/* ---------------- 漏斗卡 ---------------- */
+.ds-funnel { display: flex; gap: var(--ds-sp-2); flex-wrap: wrap; }
+.ds-funnel .stage { background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--ds-radius-sm); padding: 8px 14px; text-align: center; }
+.ds-funnel .stage b { display: block; font-size: 18px; }
+.ds-funnel .stage span { color: var(--muted); font-size: var(--ds-fs-xs); }
+.ds-funnel .arrow { align-self: center; color: var(--muted); }
+
+/* ---------------- gold 七维分解 ---------------- */
+.ds-dims { display: grid; gap: 6px; }
+.ds-dim { display: grid; grid-template-columns: 92px 1fr 38px; gap: 8px; align-items: center;
+  font-size: var(--ds-fs-sm); }
+.ds-dim .bar { background: var(--bg); border-radius: 999px; height: 8px; overflow: hidden;
+  border: 1px solid var(--line); }
+.ds-dim .bar > i { display: block; height: 100%; background: var(--ds-primary); }
+.ds-dim .why { grid-column: 1 / -1; color: var(--muted); font-size: var(--ds-fs-xs); padding-left: 2px; }

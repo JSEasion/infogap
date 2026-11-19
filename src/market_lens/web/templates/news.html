@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% import "_sigcard.html" as sc %}
+{% block content %}
+<div class="ds-pagehead">
+  <div>
+    <h1 class="title">行业资讯 <span class="muted">{{ total }} 条</span></h1>
+    <div class="desc">每条都是<b>治理后的中文信号卡</b>：发生了什么 / 关键要点 / 对你的影响；
+      英文渠道已翻译为中文，原文链接始终可溯。</div>
+  </div>
+  <div class="actions">
+    {% if ungoverned %}<span class="ds-badge gold-c">{{ ungoverned }} 条待治理</span>{% endif %}
+    <button class="ds-btn plain" id="btn-regovern">🌍 重新治理未翻译</button>
+  </div>
+</div>
+
+<form method="get" class="filterbar">
+  <input name="q" placeholder="搜一句话/要点/正文关键词" value="{{ filters.q }}" style="flex:1;min-width:180px">
+  <input type="hidden" name="signal" value="{{ filters.signal }}">
+  <select name="sort">
+    <option value="hot" {{ 'selected' if filters.sort=='hot' }}>🔥 热度优先</option>
+    <option value="new" {{ 'selected' if filters.sort=='new' }}>🕐 最新</option>
+    <option value="gold" {{ 'selected' if filters.sort=='gold' }}>🏅 含金量</option>
+  </select>
+  <button class="ds-btn">搜索</button>
+  {% if filters.q or filters.signal %}<a href="/news" class="ds-btn plain">重置</a>{% endif %}
+</form>
+
+<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+  <a class="ds-badge {{ 'sig-none' if not filters.signal else 'gold-c' }}" href="/news?{{ {'q': filters.q, 'sort': filters.sort} | toquery }}">全部</a>
+  {% for sig, label in [('funding','💰 融资'), ('layoff','📉 裁员'), ('release','🚀 发布'),
+                        ('policy','📋 政策'), ('hiring','🔁 招聘动向'), ('tech','🔬 技术')] %}
+  <a class="ds-badge {{ 'sig-' + sig if filters.signal != sig else 'gold-b' }}"
+     href="/news?{{ {'q': filters.q, 'sort': filters.sort, 'signal': sig} | toquery }}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+{% if items %}
+{% for n in items %}{{ sc.sigcard(n) }}{% endfor %}
+{{ sc.pager('/news', filters, page, pages) }}
+{% else %}
+<div class="ds-empty">
+  <div class="icon">📰</div>
+  <div class="hint">{% if filters.q or filters.signal %}没有匹配的资讯{% else %}还没有精选资讯{% endif %}</div>
+  <div class="action">{% if filters.q or filters.signal %}<a class="ds-btn plain" href="/news">清除筛选</a>
+    {% else %}<a class="ds-btn" href="/import">去数据接入中心采集</a>{% endif %}</div>
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById("btn-regovern").onclick = function () {
+  TaskCenter.submit("regovern", { kinds: ["news"] }, "重新治理行业资讯（中文化+摘要提取）", this);
+};
+</script>
+{% endblock %}

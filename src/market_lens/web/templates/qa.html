@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% block title %}数据问答{% endblock %}
+{% block content %}
+<h1>数据问答</h1>
+<div class="panel">
+  <p class="muted">只基于岗位库回答（FTS 召回 + {{ 'LLM 流式生成' if llm_ready else '规则召回' }}），示例：
+    「北京的 Agent 岗普遍要求什么技能」「哪些岗位加班少且薪资 30K 以上」「远程岗有几家、什么背景」<br>
+    生成在后台进行：切换页面不会中断，回来可继续查看；完成后的问答自动存入下方历史。</p>
+  <form id="qa-form" class="qa-form" onsubmit="return askStream(event)">
+    <input id="qa-q" placeholder="输入你的问题…" style="flex:1" required value="{{ question }}">
+    <button class="btn" id="qa-btn">提问</button>
+  </form>
+</div>
+
+<div id="stream-area" style="display:none">
+  <div class="panel">
+    <div id="qa-cur-q" class="qa-cur-q"></div>
+    <div id="steps" class="steps"></div>
+    <details id="think-box" class="think-box" open>
+      <summary>🧠 思考过程 <span class="muted sm">（模型思维链实时输出）</span></summary>
+      <pre id="think"></pre>
+    </details>
+    <div id="answer" class="stream-answer"></div>
+  </div>
+</div>
+
+<div class="panel" id="cited-panel" style="display:none">
+  <h3>引用的岗位（<span id="cited-n"></span> 条）</h3>
+  <table>
+    <tr><th>职位</th><th>公司</th><th>城市</th><th>薪资</th><th>WLB</th></tr>
+    <tbody id="cited-body"></tbody>
+  </table>
+</div>
+
+<div class="panel">
+  <h3>历史会话（本地持久保存）</h3>
+  <div id="qa-history"><span class="muted">加载中…</span></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function el(id) { return document.getElementById(id); }
+
+/* ---------- 流式输出区 ---------- */
+var streamCursor = null, attachedSid = null;
+
+function resetStreamUI() {
+  el("stream-area").style.display = "";
+  el("steps").innerHTML = ""; el("think").textContent = "";
+  el("answer").textContent = ""; el("answer").className = "stream-answer";
+  el("think-box").open = true; el("think-box").style.display = "";
+  el("cited-panel").style.display = "none";
+  streamCursor = document.createElement("span");
+  streamCursor.className = "stream-cursor"; streamCursor.textContent = "▍";
+}
+
+function setBusy(busy) {
+  el("qa-btn").disabled = busy;
+  el("qa-btn").textContent = busy ? "生成中…" : "提问";
+}
+
+function renderCited(cited) {
+  if (!cited || !cited.length) return;
+  el("cited-panel").style.display = "";
+  el("cited-n").textContent = cited.length;
+  var body = el("cited-body"); body.innerHTML = "";
+  cited.forEach(function (j) {
+    var tr = document.createElement("tr");
+    tr.innerHTML = '<td><a href="/jobs/' + j.id + '"></a></td><td></td><td></td><td></td><td></td>';
+    tr.children[0].firstChild.textContent = j.title || "(未识别)";
+    tr.children[1].textContent = j.company || "";
+    tr.children[2].textContent = j.city || "—";
+    tr.children[3].textContent = j.salary_raw || "—";
+    tr.children[4].textContent = (j.wlb_level === null || j.wlb_level === undefined) ? "未知" : "L" + j.wlb_level;
+    body.appendChild(tr);
+  });
+}
+
+/* 订阅某个会话的事件流（from=0 全量回放：切页回来也能看到已输出的内容） */
+function attachStream(sid, question, resumed) {
+  attachedSid = sid;
+  resetStreamUI();
+  setBusy(true);
+  var qEl = el("qa-cur-q");
+  qEl.textContent = "问题：" + question;
+  if (resumed) {
+    var chip = document.createElement("span");
+    chip.className = "step-chip"; chip.textContent = "已接续进行中的生成";
+    el("steps").appendChild(chip);
+  }
+  window.mlStream("/qa/events/" + sid + "?from=0", {
+    resume: function (seq) { return "/qa/events/" + sid + "?from=" + seq; },
+    onStep: function (t) {
+      var chip = document.createElement("span");
+      chip.className = "step-chip"; chip.textContent = t;
+      el("steps").appendChild(chip);
+    },
+    onThink: function (delta) {
+      var box = el("think");
+      box.textContent += delta;
+      box.scrollTop = box.scrollHeight;
+    },
+    onAnswer: function (delta) {
+      el("think-box").open = false;
+      var a = el("answer");
+      if (streamCursor.parentNode !== a) { a.textContent = ""; a.appendChild(streamCursor); }
+      a.insertBefore(document.createTextNode(delta), streamCursor);
+    },
+    onDone: function (ev) {
+      streamCursor.remove();
+      setBusy(false);
+      // 收尾：用服务端渲染好的 Markdown 替换打字流原文（表格/加粗/标题生效）
+      if (ev.answer_html) {
+        el("answer").className = "report-body";
+        el("answer").innerHTML = ev.answer_html;
+      }
+      renderCited(ev.cited);
+      loadHistory();
+      attachNextActive();   // 若还有其他进行中的会话，接着展示
+    },
+    onError: function (msg) {
+      setBusy(false);
+      var chip = document.createElement("span");
+      chip.className = "step-chip err"; chip.textContent = "出错：" + msg;
+      el("steps").appendChild(chip);
+      loadHistory();   // 部分回答已落库，去历史里看
+    },
+    onGone: function () {
+      // 会话不在了（服务重启过）：不报 network error，引导到历史（已保存部分回答）
+      setBusy(false);
+      var chip = document.createElement("span");
+      chip.className = "step-chip err";
+      chip.textContent = "连接中断（服务可能已重启），已生成的内容已保存到历史会话";
+      el("steps").appendChild(chip);
+      loadHistory();
+    }
+  });
+}
+
+function attachNextActive() {
+  fetch("/api/qa/active").then(function (r) { return r.json(); }).then(function (list) {
+    if (list.length) attachStream(list[list.length - 1].sid, list[list.length - 1].question, true);
+  }).catch(function () {});
+}
+
+function askStream(e) {
+  e.preventDefault();
+  if (el("qa-btn").disabled) return false;   // 生成中禁止重复提交（Enter 键）
+  var q = el("qa-q").value.trim();
+  if (!q) return false;
+  setBusy(true);
+  fetch("/api/qa/ask", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ q: q })
+  }).then(function (r) {
+    if (!r.ok) return r.json().then(function (d) { throw new Error(d.detail || "HTTP " + r.status); });
+    return r.json();
+  }).then(function (d) {
+    attachStream(d.sid, d.question, false);
+  }).catch(function (err) {
+    setBusy(false);
+    var chip = document.createElement("span");
+    chip.className = "step-chip err"; chip.textContent = "提问失败：" + (err.message || err);
+    el("stream-area").style.display = "";
+    el("steps").innerHTML = "";
+    el("steps").appendChild(chip);
+  });
+  return false;
+}
+
+/* ---------- 历史会话 ---------- */
+function loadHistory() {
+  fetch("/api/qa/history?limit=50").then(function (r) { return r.json(); }).then(function (rows) {
+    var host = el("qa-history");
+    host.innerHTML = "";
+    if (!rows.length) {
+      var empty = document.createElement("div");
+      empty.className = "qa-hist-empty";
+      empty.textContent = "还没有历史问答。提问后自动保存在这里（仅存本地数据库）。";
+      host.appendChild(empty);
+      return;
+    }
+    rows.forEach(function (r) {
+      var item = document.createElement("div");
+      item.className = "qa-hist-item";
+      var head = document.createElement("div");
+      head.className = "qa-hist-head";
+      var q = document.createElement("span");
+      q.className = "qa-hist-q"; q.textContent = r.question; q.title = r.question;
+      var meta = document.createElement("span");
+      meta.className = "muted sm";
+      meta.textContent = (r.created_at || "").replace("T", " ").slice(0, 16) +
+        " · 引用 " + r.cited_n + " 条";
+      var del = document.createElement("button");
+      del.className = "btn btn-sm btn-plain qa-hist-del"; del.textContent = "删除";
+      del.onclick = function (ev) {
+        ev.stopPropagation();
+        fetch("/api/qa/history/" + r.id, { method: "DELETE" }).then(loadHistory);
+      };
+      head.appendChild(q); head.appendChild(meta); head.appendChild(del);
+      var body = document.createElement("div");
+      body.className = "qa-hist-body report-body";
+      body.style.display = "none";
+      body.innerHTML = r.answer_html;   // 服务端 Markdown 渲染结果
+      head.onclick = function () {
+        body.style.display = body.style.display === "none" ? "" : "none";
+      };
+      item.appendChild(head); item.appendChild(body);
+      host.appendChild(item);
+    });
+  }).catch(function () {
+    el("qa-history").innerHTML = '<span class="muted">历史加载失败</span>';
+  });
+}
+
+/* 页面加载：先看有没有进行中的生成（切页/重开浏览器回来都能接续），再加载历史 */
+(function () {
+  attachNextActive();
+  loadHistory();
+})();
+</script>
+{% endblock %}

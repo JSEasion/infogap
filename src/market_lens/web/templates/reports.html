@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}报告中心{% endblock %}
+{% block content %}
+<h1>报告中心</h1>
+<div class="cards">
+  <div class="panel">
+    <h3>📈 行情报告</h3>
+    <p class="muted">技能需求/薪资分布/WLB信号/城市差异 + 给你的切入建议</p>
+    <button class="btn" onclick="streamReport('market')">生成行情报告</button>
+  </div>
+  <div class="panel">
+    <h3>🎯 差距分析</h3>
+    <p class="muted">你的技能盘面 vs 市场需求 → 缺口清单 + 4 周补齐路径 + 简历策略</p>
+    <button class="btn" onclick="streamReport('gap')">生成差距分析</button>
+  </div>
+  <div class="panel">
+    <h3>📰 资讯周报</h3>
+    <p class="muted">聚合近 7 天资讯，LLM 按主题聚类点评（需先抓取 RSS）</p>
+    <button class="btn" onclick="streamReport('digest')">生成周报</button>
+  </div>
+</div>
+
+<div id="stream-area" class="panel" style="display:none">
+  <div id="steps" class="steps"></div>
+  <details id="think-box" class="think-box" open>
+    <summary>🧠 思考过程 <span class="muted sm">（模型思维链实时输出）</span></summary>
+    <pre id="think"></pre>
+  </details>
+  <div id="answer" class="stream-answer"></div>
+</div>
+
+<div class="panel">
+  <h3>历史报告</h3>
+  {% if reports %}
+  <table>
+    <tr><th>ID</th><th>类型</th><th>标题</th><th>生成时间</th></tr>
+    {% for r in reports %}
+    <tr><td>{{ r.id }}</td><td>{{ {'market':'📈行情','gap':'🎯差距','digest':'📰周报'}[r.kind] }}</td>
+        <td><a href="/reports/{{ r.id }}">{{ r.title }}</a></td><td>{{ r.created_at[:16] }}</td></tr>
+    {% endfor %}
+  </table>
+  {% else %}<p class="muted">还没有报告。建议顺序：先「行情报告」再「差距分析」。</p>{% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function el(id) { return document.getElementById(id); }
+function streamReport(kind) {
+  el("stream-area").style.display = "";
+  el("steps").innerHTML = ""; el("think").textContent = ""; el("answer").textContent = "";
+  el("think-box").open = true; el("think-box").style.display = "";
+  var cursor = document.createElement("span");
+  cursor.className = "stream-cursor"; cursor.textContent = "▍";
+  var btns = document.querySelectorAll(".cards .btn");
+  btns.forEach(function (b) { b.disabled = true; });
+
+  window.mlStream("/reports/stream?kind=" + encodeURIComponent(kind), {
+    onStep: function (t) {
+      var chip = document.createElement("span");
+      chip.className = "step-chip"; chip.textContent = t;
+      el("steps").appendChild(chip);
+    },
+    onThink: function (d) {
+      var box = el("think");
+      box.textContent += d; box.scrollTop = box.scrollHeight;
+    },
+    onAnswer: function (d) {
+      el("think-box").open = false;
+      var a = el("answer");
+      if (cursor.parentNode !== a) { a.textContent = ""; a.appendChild(cursor); }
+      a.insertBefore(document.createTextNode(d), cursor);
+    },
+    onDone: function (ev) {
+      cursor.remove();
+      btns.forEach(function (b) { b.disabled = false; });
+      location.href = "/reports/" + ev.report_id + "?msg=" + encodeURIComponent("报告已生成");
+    },
+    onError: function (msg) {
+      cursor.remove();
+      btns.forEach(function (b) { b.disabled = false; });
+      var chip = document.createElement("span");
+      chip.className = "step-chip err"; chip.textContent = "出错：" + msg;
+      el("steps").appendChild(chip);
+    }
+  });
+}
+</script>
+{% endblock %}

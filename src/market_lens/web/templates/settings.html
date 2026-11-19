@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="ds-pagehead">
+  <div>
+    <h1 class="title">系统设置</h1>
+    <div class="desc">模型接入的唯一入口：<b>保存即测试、即热生效</b>（无需重启）。密钥只落 .env（0600 权限），不进 yaml/日志。</div>
+  </div>
+  <div class="actions">
+    <button class="ds-btn plain" id="btn-test-all">🧪 全部通道测试</button>
+    <button class="ds-btn plain" id="btn-reset-live">↩️ 重置为 config.yaml 基线</button>
+  </div>
+</div>
+
+<div class="ds-tabs" data-ds-tabs="settings">
+  <button class="ds-tab active" data-ds-tab="llm">🤖 LLM 通道</button>
+  <button class="ds-tab" data-ds-tab="retrieval">🔢 向量与精排</button>
+  <button class="ds-tab" data-ds-tab="quality">🚪 质量门</button>
+  <button class="ds-tab" data-ds-tab="system">🧩 系统与预算</button>
+</div>
+
+<!-- ============ LLM 通道 ============ -->
+<div data-ds-tabpanel="settings" data-ds-panel="llm">
+  <div class="panel">
+    <h3>已配置通道 <span class="muted sm">（全部 OpenAI 兼容协议；任务路由自动降级）</span></h3>
+    <table id="llm-table">
+      <tr><th>通道</th><th>base_url</th><th>模型</th><th>状态</th><th>操作</th></tr>
+      {% for p in providers %}
+      <tr data-provider="{{ p.id }}">
+        <td><b>{{ p.id }}</b></td>
+        <td class="sm">{{ p.base_url or '—' }}</td>
+        <td class="sm">{{ p.models | join(', ') }}</td>
+        <td>{% if p.ready %}<span class="ds-badge sig-release">{{ '本地端点' if p.local else 'key已配置' }}</span>
+            {% else %}<span class="ds-badge sig-none">未配置</span>{% endif %}</td>
+        <td style="white-space:nowrap">
+          <button class="ds-btn sm plain" data-edit="{{ p.id }}">编辑</button>
+          <button class="ds-btn sm" data-test="{{ p.id }}">测试</button>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+    <div style="margin-top:12px"><button class="ds-btn plain" id="btn-add-llm">＋ 新增通道</button></div>
+  </div>
+  <div class="panel">
+    <h3>任务路由 <span class="muted sm">（各任务按序降级的通道链）</span></h3>
+    <table>
+      <tr><th>任务</th><th>降级链</th></tr>
+      {% for task, chain in routing.items() %}
+      <tr><td>{{ task }}</td><td class="sm">{{ chain | join(' → ') }}</td></tr>
+      {% endfor %}
+    </table>
+    <p class="sm muted">在「编辑通道」里调整通道后，路由自动继承；高级路由编辑直接改 config.yaml。</p>
+  </div>
+</div>
+
+<!-- ============ 向量与精排 ============ -->
+<div data-ds-tabpanel="settings" data-ds-panel="retrieval" hidden>
+  <div class="grid-2">
+    <div class="panel">
+      <h3>向量召回（Embedding）</h3>
+      <p class="sm muted">bge-m3 等 OpenAI 兼容 <code>/v1/embeddings</code> 端点。配置后混合检索自动启用。</p>
+      <div class="ds-field"><label>base_url</label>
+        <input id="emb-url" value="{{ embedding.base_url or '' }}" placeholder="http://host:port/v1" /></div>
+      <div class="ds-field"><label>模型名</label>
+        <input id="emb-model" value="{{ embedding.model or 'bge-m3' }}" /></div>
+      <div class="ds-field"><label>API Key <span class="muted">（可选，留空=沿用 .env）</span></label>
+        <input id="emb-key" type="password" placeholder="{{ '已配置（留空不改）' if embedding.key_set else '未配置' }}" /></div>
+      <div class="ds-field"><label>批量大小</label><input id="emb-batch" type="number" value="{{ embedding.batch_size or 16 }}" /></div>
+      <div id="emb-status" class="sm" style="margin-bottom:10px">
+        {% if embedding.ready %}<span class="ds-badge sig-release">已配置</span>
+        {% else %}<span class="ds-badge sig-none">未配置（检索降级为纯 FTS）</span>{% endif %}</div>
+      <button class="ds-btn" id="btn-save-emb">保存并测试</button>
+    </div>
+    <div class="panel">
+      <h3>精排（Rerank）</h3>
+      <p class="sm muted">bge-reranker-v2-m3 等 <code>/v1/rerank</code> 端点。对混合召回 top-K 交叉编码重排。</p>
+      <div class="ds-field"><label>base_url</label>
+        <input id="rr-url" value="{{ rerank.base_url or '' }}" placeholder="http://host:port/v1" /></div>
+      <div class="ds-field"><label>模型名</label>
+        <input id="rr-model" value="{{ rerank.model or 'bge-reranker-v2-m3' }}" /></div>
+      <div class="ds-field"><label>API Key <span class="muted">（可选，留空=沿用 .env）</span></label>
+        <input id="rr-key" type="password" placeholder="{{ '已配置（留空不改）' if rerank.key_set else '未配置' }}" /></div>
+      <div class="ds-field"><label>top_k</label><input id="rr-topk" type="number" value="{{ rerank.top_k or 24 }}" /></div>
+      <div id="rr-status" class="sm" style="margin-bottom:10px">
+        {% if rerank.ready %}<span class="ds-badge sig-release">已配置</span>
+        {% else %}<span class="ds-badge sig-none">未配置（检索降级为 RRF 融合）</span>{% endif %}</div>
+      <button class="ds-btn" id="btn-save-rr">保存并测试</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>检索策略</h3>
+    <label class="check"><input type="checkbox" id="retr-vector" {{ 'checked' if retrieval.vector }} />
+      向量召回（关闭 = 纯 FTS5+同义词）</label>
+    <label class="check"><input type="checkbox" id="retr-rerank" {{ 'checked' if retrieval.rerank }} />
+      精排重排（关闭 = RRF 融合排序）</label>
+    <div style="margin-top:10px">
+      <button class="ds-btn plain" id="btn-save-retr">保存策略</button>
+      <button class="ds-btn plain" id="btn-reindex">🔄 重建向量索引</button>
+    </div>
+    <p class="sm muted">降级链：rerank 不可达 → RRF 融合；embedding 不可达 → 纯 FTS。任何一层挂掉检索都可用。</p>
+  </div>
+</div>
+
+<!-- ============ 质量门 ============ -->
+<div data-ds-tabpanel="settings" data-ds-panel="quality" hidden>
+  <div class="panel">
+    <h3>门阈值 <span class="muted sm">（≥高线精选；灰区 LLM 裁决；&lt;低线隔离）</span></h3>
+    <table>
+      <tr><th>类型</th><th>低线（隔离）</th><th>高线（精选）</th></tr>
+      {% for kind, gate in quality.gates.items() %}
+      <tr><td>{{ kind }}</td>
+        <td><input class="wnum" type="number" data-gate-lo="{{ kind }}" value="{{ gate[0] }}" /></td>
+        <td><input class="wnum" type="number" data-gate-hi="{{ kind }}" value="{{ gate[1] }}" /></td></tr>
+      {% endfor %}
+    </table>
+    <label class="check" style="margin-top:10px"><input type="checkbox" id="q-judge" {{ 'checked' if quality.judge }} />
+      灰区 LLM 裁决（关闭 = 灰区全部进隔离区）</label>
+    <div style="margin-top:8px"><button class="ds-btn" id="btn-save-quality">保存质量门</button></div>
+  </div>
+  <div class="panel">
+    <h3>渠道档案（可信 tier × 稀缺 scarcity）</h3>
+    <table>
+      <tr><th>渠道</th><th>分组</th><th>tier</th><th>scarcity</th></tr>
+      {% for c in channel_tiers %}
+      <tr><td>{{ c.source }}</td><td><span class="ds-badge grp-{{ c.group }}">{{ c.group_desc }}</span></td>
+          <td>{{ c.tier }}</td><td>{{ c.scarcity }}</td></tr>
+      {% endfor %}
+    </table>
+    <p class="sm muted">冷门渠道（tg:/gh:/niche:）起步 tier 低，靠交叉验证回填；覆盖单个渠道在 config.yaml
+      <code>quality.tiers</code> 配置。</p>
+  </div>
+</div>
+
+<!-- ============ 系统与预算 ============ -->
+<div data-ds-tabpanel="settings" data-ds-panel="system" hidden>
+  <div class="grid-2">
+    <div class="panel">
+      <h3>用量与成本</h3>
+      <p>本月花费：<b>{{ usage.month_cost_cny }} 元</b></p>
+      <div class="ds-field"><label>月度预算（元，超限熔断）</label>
+        <input id="budget-input" type="number" step="0.5" value="{{ budget }}" /></div>
+      <button class="ds-btn plain" id="btn-save-budget">保存预算</button>
+      {% if usage.rows %}
+      <table style="margin-top:14px">
+        <tr><th>通道</th><th>模型</th><th>次数</th><th>prompt</th><th>completion</th></tr>
+        {% for r in usage.rows %}
+        <tr><td>{{ r.provider }}</td><td>{{ r.model }}</td><td>{{ r.n }}</td>
+            <td>{{ r.pt }}</td><td>{{ r.ct }}</td></tr>
+        {% endfor %}
+      </table>
+      {% endif %}
+    </div>
+    <div class="panel">
+      <h3>自动采集调度</h3>
+      <label class="check"><input type="checkbox" id="sched-enabled" {{ 'checked' if scheduler.enabled }} />
+        每日自动全链路（采集→门→整合→快照→向量化）</label>
+      <div class="ds-field" style="margin-top:8px"><label>运行时刻（点）</label>
+        <input id="sched-hour" type="number" min="0" max="23" value="{{ scheduler.hour }}" style="width:90px" /></div>
+      <button class="ds-btn plain" id="btn-save-sched">保存调度</button>
+      <p class="sm muted" style="margin-top:10px">
+        {% if scheduler.next_run %}下次运行：{{ scheduler.next_run }}<br>{% endif %}
+        {% if scheduler.last_status %}上次：{{ scheduler.last_status }}{% endif %}</p>
+      <h3 style="margin-top:20px">引擎与扩展</h3>
+      <table class="kv">
+        <tr><td>DSH 引擎</td><td>{% if dsh_available %}<span class="ds-badge sig-release">已安装</span>
+            {% else %}<span class="ds-badge sig-none">未安装</span>{% endif %}</td></tr>
+        <tr><td>搜索 API</td><td>{% if search_ready %}<span class="ds-badge sig-release">已配置</span>
+            {% else %}未配置（.env 设 TAVILY_API_KEY / BOCHA_API_KEY）{% endif %}</td></tr>
+        <tr><td>数据文件</td><td class="sm">data/app.db（SQLite，可直接备份）</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+/* ---------- 通用保存 ---------- */
+async function saveSection(patch, btn, okMsg) {
+  await dsFetch("/api/settings/save", { method: "POST", json: patch, trigger: btn, okToast: okMsg });
+  setTimeout(() => location.reload(), 600);
+}
+/* ---------- LLM 通道 ---------- */
+document.querySelectorAll("[data-test]").forEach(b => b.onclick = async function () {
+  const r = await dsFetch(`/api/settings/test?provider=${b.dataset.test}`, { method: "POST", trigger: b });
+  dsToast(r.ok ? "✅ " + b.dataset.test : "❌ " + b.dataset.test,
+    `${r.message}（${r.latency}s）`, r.ok ? "ok" : "err");
+});
+document.getElementById("btn-test-all").onclick = async function () {
+  const rows = document.querySelectorAll("#llm-table tr[data-provider]");
+  for (const row of rows) {
+    const pid = row.dataset.provider;
+    try {
+      const r = await fetch(`/api/settings/test?provider=${pid}`, { method: "POST" }).then(x => x.json());
+      const badge = row.querySelector("td:nth-child(4)");
+      badge.innerHTML = r.ok ? `<span class="ds-badge sig-release">✓ ${r.latency}s</span>`
+                             : `<span class="ds-badge sig-layoff">✗ 失败</span>`;
+    } catch (e) { /* 单通道失败继续 */ }
+  }
+  dsToast("全部通道测试完成", "", "ok");
+};
+function llmEditor(p) {
+  const isEdit = !!p;
+  const m = dsModal(isEdit ? `编辑通道：${p.id}` : "新增 LLM 通道", `
+    <div class="ds-field"><label>通道 ID（英文）</label>
+      <input id="le-id" ${isEdit ? "disabled" : ""} value="${p ? p.id : ""}" placeholder="如 deepseek-official / my-vllm" /></div>
+    <div class="ds-field"><label>base_url（OpenAI 兼容）</label>
+      <input id="le-url" value="${p ? p.base_url : ""}" placeholder="https://api.deepseek.com/v1" /></div>
+    <div class="ds-field"><label>模型（逗号分隔）</label>
+      <input id="le-models" value="${p ? p.models.join(",") : ""}" placeholder="deepseek-chat, deepseek-reasoner" /></div>
+    <div class="ds-field"><label>API Key（留空 = 不修改已有）</label>
+      <input id="le-key" type="password" placeholder="${p && p.ready ? "已配置（留空不改）" : "sk-…（本地端点可留空）"}" /></div>
+    <div class="ds-field"><label>JSON mode</label>
+      <select id="le-json"><option value="auto">auto（自动协商）</option><option value="off">off（提示词约束）</option></select></div>`,
+    [{ label: "取消" }, { label: "保存并测试", onClick: async (bd) => {
+        const id = bd.querySelector("#le-id").value.trim();
+        const url = bd.querySelector("#le-url").value.trim();
+        const models = bd.querySelector("#le-models").value.split(",").map(s => s.trim()).filter(Boolean);
+        const key = bd.querySelector("#le-key").value.trim();
+        if (!id || !url || !models.length) { dsToast("字段不全", "ID / base_url / 模型必填", "err"); return true; }
+        await dsFetch("/api/settings/llm", { method: "POST", trigger: null,
+          json: { id, base_url: url, models, api_key: key } });
+        const r = await fetch(`/api/settings/test?provider=${id}`, { method: "POST" }).then(x => x.json());
+        dsToast(r.ok ? "✅ 保存成功，通道可用" : "⚠️ 已保存，但测试未通过",
+          r.message + `（${r.latency}s）`, r.ok ? "ok" : "err");
+        setTimeout(() => location.reload(), 1200);
+      } }]);
+  if (isEdit) m.el.querySelector("#le-json").value = p.json_mode || "auto";
+}
+document.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => {
+  const pid = b.dataset.edit;
+  const p = {{ providers_json | safe }}.find(x => x.id === pid);
+  llmEditor(p);
+});
+document.getElementById("btn-add-llm").onclick = () => llmEditor(null);
+document.getElementById("btn-reset-live").onclick = () =>
+  dsConfirm("重置运行时配置", "将清除设置页的全部改动，回到 config.yaml 基线（密钥保留）。", async () => {
+    await dsFetch("/api/settings/reset", { method: "POST" });
+    setTimeout(() => location.reload(), 500);
+  }, "重置", true);
+
+/* ---------- Embedding / Rerank：保存并测试 ---------- */
+document.getElementById("btn-save-emb").onclick = async function () {
+  const key = document.getElementById("emb-key").value.trim();
+  await dsFetch("/api/settings/save", { method: "POST", trigger: this, json: { section: "embedding",
+    patch: { base_url: document.getElementById("emb-url").value.trim(),
+             model: document.getElementById("emb-model").value.trim() || "bge-m3",
+             batch_size: +document.getElementById("emb-batch").value || 16 },
+    secret: key ? { env: "EMBEDDING_API_KEY", value: key } : null } });
+  const r = await fetch("/api/settings/test?kind=embedding", { method: "POST" }).then(x => x.json());
+  dsToast(r.ok ? "✅ Embedding 可用" : "❌ Embedding 测试失败",
+    `${r.message}（${r.latency}s）`, r.ok ? "ok" : "err");
+};
+document.getElementById("btn-save-rr").onclick = async function () {
+  const key = document.getElementById("rr-key").value.trim();
+  await dsFetch("/api/settings/save", { method: "POST", trigger: this, json: { section: "rerank",
+    patch: { base_url: document.getElementById("rr-url").value.trim(),
+             model: document.getElementById("rr-model").value.trim() || "bge-reranker-v2-m3",
+             top_k: +document.getElementById("rr-topk").value || 24 },
+    secret: key ? { env: "RERANK_API_KEY", value: key } : null } });
+  const r = await fetch("/api/settings/test?kind=rerank", { method: "POST" }).then(x => x.json());
+  dsToast(r.ok ? "✅ Rerank 可用" : "❌ Rerank 测试失败",
+    `${r.message}（${r.latency}s）`, r.ok ? "ok" : "err");
+};
+document.getElementById("btn-save-retr").onclick = function () {
+  saveSection({ section: "retrieval", patch: {
+    vector: document.getElementById("retr-vector").checked,
+    rerank: document.getElementById("retr-rerank").checked } }, this, "检索策略已保存（热生效）");
+};
+document.getElementById("btn-reindex").onclick = function () {
+  TaskCenter.submit("reindex_vectors", {}, "重建向量索引", this);
+};
+
+/* ---------- 质量门 ---------- */
+document.getElementById("btn-save-quality").onclick = function () {
+  const gates = {};
+  document.querySelectorAll("[data-gate-lo]").forEach(inp => {
+    gates[inp.dataset.gateLo] = [+inp.value,
+      +document.querySelector(`[data-gate-hi="${inp.dataset.gateLo}"]`).value];
+  });
+  saveSection({ section: "quality", patch: { gates, judge: document.getElementById("q-judge").checked } },
+    this, "质量门已保存（对 raw 层重放生效）");
+};
+
+/* ---------- 预算 / 调度 ---------- */
+document.getElementById("btn-save-budget").onclick = function () {
+  saveSection({ section: "llm", patch: { budget_monthly_cny: +document.getElementById("budget-input").value } },
+    this, "预算已保存");
+};
+document.getElementById("btn-save-sched").onclick = function () {
+  saveSection({ section: "scheduler", patch: {
+    enabled: document.getElementById("sched-enabled").checked,
+    hour: +document.getElementById("sched-hour").value || 8 } }, this, "调度已保存（热生效）");
+};
+</script>
+{% endblock %}

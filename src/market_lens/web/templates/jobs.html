@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="ds-pagehead">
+  <div><h1 class="title">岗位库 <span class="muted">{{ total }} 条</span></h1>
+    <div class="desc">精选层数据：每条都过了质量门，gold 分可溯源。</div></div>
+  <div class="actions">
+    <select id="sort-select" onchange="location.href=withParam('sort', this.value)" style="width:auto">
+      <option value="new" {{ 'selected' if filters.sort=='new' }}>最新入库</option>
+      <option value="match" {{ 'selected' if filters.sort=='match' }}>匹配度优先</option>
+    </select>
+  </div>
+</div>
+
+<form method="get" class="filterbar" id="jobs-filter" onsubmit="return validateFilter()">
+  <input name="q" placeholder="职位/公司/描述关键词" value="{{ filters.q }}">
+  <input name="city" placeholder="城市" value="{{ filters.city }}" size="8">
+  <input name="skill" placeholder="技能id 如 mcp" value="{{ filters.skill }}" size="10">
+  <input name="salary_min" placeholder="薪资下限K" value="{{ filters.salary_min }}" size="8">
+  <input name="min_gold" placeholder="含金量≥" value="{{ filters.min_gold }}" size="8">
+  <select name="source">
+    <option value="">全部来源</option>
+    {% for s in sources %}<option value="{{ s }}" {{ 'selected' if filters.source==s }}>{{ s }}</option>{% endfor %}
+  </select>
+  <select name="education">
+    <option value="">学历不限</option>
+    {% for e in ['大专','本科','硕士','博士'] %}
+    <option value="{{ e }}" {{ 'selected' if filters.education==e }}>{{ e }}</option>
+    {% endfor %}
+  </select>
+  <button class="ds-btn">筛选</button>
+  <a href="/jobs" class="ds-btn plain">重置</a>
+</form>
+
+<table class="jobs-table">
+  <tr><th>匹配</th><th>含金</th><th>职位</th><th>城市</th><th>薪资</th><th>WLB</th><th>技能</th><th>来源</th></tr>
+  {% for it in items %}
+  <tr>
+    <td><span class="badge {{ it.badge_cls }}">{{ it.badge }}</span></td>
+    <td>{% if it.job.gold_score %}
+        <span class="ds-badge {{ 'gold-a' if it.job.gold_score >= 80 else 'gold-b' if it.job.gold_score >= 65 else 'gold-c' }}">
+          🏅 {{ it.job.gold_score | round(0) }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+    <td><a href="/jobs/{{ it.job.id }}">{{ it.job.title or '(未识别标题)' }}</a>
+        <div class="muted">{{ it.job.company }}</div></td>
+    <td>{{ it.job.city or '—' }}</td>
+    <td>{{ it.job.salary_raw or '—' }}{% if it.job.salary_months and it.job.salary_months != 12 %}·{{ it.job.salary_months }}薪{% endif %}</td>
+    <td>{{ ['L0','L1','L2','L3','L4'][it.job.wlb_level] if it.job.wlb_level is not none else '未知' }}</td>
+    <td class="skills-cell">
+      {% for s in (it.job.skills | fromjson)[:6] %}<span class="chip">{{ s }}</span>{% endfor %}
+    </td>
+    <td><span class="src src-{{ it.job.source }}">{{ it.job.source }}</span></td>
+  </tr>
+  {% endfor %}
+  {% if not items %}
+  <tr><td colspan="8">
+    <div class="ds-empty"><div class="icon">💼</div><div class="hint">岗位库还是空的</div>
+      <div class="action"><a class="ds-btn" href="/import">去数据接入中心采集</a></div></div>
+  </td></tr>{% endif %}
+</table>
+<div class="pager">
+  {% if page > 1 %}<a href="/jobs?{{ filters|toquery }}&page={{ page-1 }}">← 上一页</a>{% endif %}
+  <span>第 {{ page }} / {{ pages }} 页</span>
+  {% if page < pages %}<a href="/jobs?{{ filters|toquery }}&page={{ page+1 }}">下一页 →</a>{% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function validateFilter() {
+  const mg = document.querySelector('[name=min_gold]');
+  if (mg.value && (+mg.value < 0 || +mg.value > 100)) {
+    dsToast("含金量范围 0-100", "", "err"); return false;
+  }
+  return true;
+}
+function withParam(key, val) {
+  const p = new URLSearchParams(location.search);
+  p.set(key, val); p.delete("page");
+  return "/jobs?" + p.toString();
+}
+</script>
+{% endblock %}

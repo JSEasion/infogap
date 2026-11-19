@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.env
+data/
+.zcode/
+.pytest_cache/
+.DS_Store
+# 桌面版打包产物
+build/
+dist/

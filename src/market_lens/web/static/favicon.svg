@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a7bff"/>
+      <stop offset="1" stop-color="#2447b8"/>
+    </linearGradient>
+  </defs>
+  <!-- 圆角底板 -->
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <!-- 上条：一侧掌握的完整信息 -->
+  <rect x="13" y="17.5" width="38" height="9" rx="4.5" fill="#ffffff"/>
+  <!-- 下条：另一侧只掌握一部分 -->
+  <rect x="13" y="37.5" width="21.5" height="9" rx="4.5" fill="#ffffff" opacity=".78"/>
+  <!-- 琥珀色高亮段：两者的「信息差」 -->
+  <rect x="34" y="37.5" width="17" height="9" rx="4.5" fill="#ffb020"/>
+</svg>

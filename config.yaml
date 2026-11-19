@@ -1,0 +1,118 @@
+# 行业透镜配置。支持 ${ENV_VAR:默认值} 环境变量展开。
+# 修改后重启服务生效（或大部分配置在「设置」页可热改）。
+
+llm:
+  providers:
+    deepseek-official:            # 通道1：DeepSeek 官方 API
+      base_url: https://api.deepseek.com/v1
+      api_key_env: DEEPSEEK_API_KEY
+      models: [deepseek-chat, deepseek-reasoner]
+      json_mode: auto             # auto=探测后决定；off=提示词约束JSON
+
+    vllm-deepseek:                # 通道2：vLLM 上的 DeepSeek 开源权重（OpenAI 格式）
+      base_url: ${VLLM_DSK_BASE_URL:http://127.0.0.1:8000/v1}
+      api_key_env: VLLM_DSK_KEY
+      models: [deepseek-v3, deepseek-r1]
+      json_mode: auto
+
+    vllm-glm:                     # 通道3：vLLM 上的 GLM 权重（GLM 格式）
+      base_url: ${VLLM_GLM_BASE_URL:http://127.0.0.1:8001/v1}
+      api_key_env: VLLM_GLM_KEY
+      models: [glm-4.6, glm-4-flash]
+      json_mode: auto
+
+    internal:                     # 通道4：内网/自建 OpenAI 兼容端点（env 未配置时自动跳过）
+      base_url: ${AGENT_BASE_URL:}
+      api_key_env: AGENT_API_KEY
+      models: ["${AGENT_MODEL_ID:minimax-m2.7}"]
+      json_mode: auto
+
+  # 任务路由：按顺序降级（base_url 为空或不可达的自动跳过）。格式 "provider/model" 或 "provider"（取其第一个模型）
+  routing:
+    extraction: [internal, vllm-glm/glm-4-flash, deepseek-official/deepseek-chat]   # 批量JD结构化：本地便宜模型优先
+    analysis:   [internal, deepseek-official/deepseek-chat]                          # 行情报告
+    gap:        [internal, deepseek-official/deepseek-chat]                          # 差距分析
+    digest:     [internal, vllm-glm/glm-4-flash, deepseek-official/deepseek-chat]    # 资讯周报
+    research:   [internal, deepseek-official/deepseek-chat]                          # DSH 研究任务
+    qa:         [internal, deepseek-official/deepseek-chat]                          # 数据问答
+    judge:      [internal, vllm-glm/glm-4-flash, deepseek-official/deepseek-chat]    # 质量门灰区裁决：廉价通道
+    summarize:  [internal, vllm-glm/glm-4-flash, deepseek-official/deepseek-chat]    # 资讯信号卡生成
+
+  budget_monthly_cny: 50.0        # 月度预算熔断（人民币）；超过后 LLM 任务拒绝执行并提示
+  dsh_enabled: true               # deepseek-harness-sdk 已安装时，research 任务走 DSH 引擎
+
+# 混合检索：向量召回（bge-m3）与精排（bge-reranker-v2-m3），OpenAI 兼容端点
+embedding:
+  base_url: ${EMBEDDING_BASE_URL:}
+  api_key_env: EMBEDDING_API_KEY
+  model: ${EMBEDDING_MODEL:bge-m3}
+  batch_size: 16                  # 每批嵌入条数
+  timeout: 30
+
+rerank:
+  base_url: ${RERANK_BASE_URL:}
+  api_key_env: RERANK_API_KEY
+  model: ${RERANK_MODEL:bge-reranker-v2-m3}
+  top_k: 24                       # 送入精排的候选数
+  timeout: 30
+
+retrieval:
+  vector: true                    # 向量召回开关（关=纯 FTS5+同义词，降级链一环）
+  rerank: true                    # 精排开关（关=仅 RRF 融合排序）
+
+# 质量门：七维权重按 kind 覆盖；门阈值 [低线, 高线]（≥高线精选 / 灰区LLM裁决 / <低线隔离）
+quality:
+  judge: true                     # 灰区 LLM 裁决开关（关=灰区走 judge_fallback 回退）
+  judge_fallback: midpoint        # judge 不可用回退：midpoint=按门中值自动分流（默认）/ quarantine=保守全隔离
+  quarantine_expire_days: 14      # 隔离区自动过期：未复核条目超 N 天转 rejected（0=关闭）
+  gates:
+    job:  [55, 70]
+    news: [50, 65]
+    tech: [50, 65]
+  tiers: {}                       # 渠道档案覆盖，如 {"tg:xxx": {tier: 0.7}}
+  weights: {}                     # 维度权重覆盖，如 {"job": {"freshness": 0.15}}
+
+# 采集渠道清单（信息差组冷门渠道在这里维护，设置页可改）
+channels:
+  telegram:                       # t.me 公开频道用户名（需开了网页预览的公开频道）
+    - DeJob_official              # Web3/AI 招聘内推频道（64K 订阅，实测可预览）
+  github_referral:
+    queries: ["内推", "大厂内推", "AI 内推"]   # GitHub Search 发现活跃内推仓库
+    max_repos: 8
+  premium_boards:                 # 官方直连招聘板（greenhouse/lever 公司标识）
+    greenhouse: []                # 如 ["openai", "anthropic"]
+    lever: []                     # 如 ["mistral"]
+  niche_boards: []                # 技术圈垂直板块 url 清单
+
+scheduler:                        # 常驻自动采集（serve 启动后台线程）
+  enabled: true
+  hour: 8                         # 每天 8 点跑全链路（采集→门→整合→快照→向量化）
+
+
+search:
+  tavily_key_env: TAVILY_API_KEY
+  bocha_key_env: BOCHA_API_KEY
+  max_results: 10
+  queries:
+    - "AI Agent 开发工程师 招聘 JD"
+    - "大模型应用开发 工程师 岗位职责 任职要求"
+    - "Agent 工程师 北京 上海 杭州 招聘"
+
+rss:
+  sources:   # 已逐个实测可用；机器之心RSS已下线、36氪/Solidot反爬，均已移除
+    - {name: 量子位, url: "https://www.qbitai.com/feed"}
+    - {name: InfoQ中国, url: "https://www.infoq.cn/feed"}
+    - {name: 阮一峰科技周刊, url: "https://www.ruanyifeng.com/blog/atom.xml"}
+    - {name: 少数派, url: "https://sspai.com/feed"}
+    - {name: HackerNews-AI, url: "https://hnrss.org/newest?q=AI+agent&count=30"}
+    - {name: TechCrunch-AI, url: "https://techcrunch.com/category/artificial-intelligence/feed"}
+    - {name: MITTR-AI, url: "https://www.technologyreview.com/topic/artificial-intelligence/feed"}
+
+# 匹配引擎：软偏好默认权重（1-5），「偏好设置」页可改
+prefs_default:
+  weights:
+    wlb: 5
+    work_mode: 3
+    company_type: 2
+    tech_fit: 4
+    salary_margin: 3

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% import "_sigcard.html" as sc %}
+{% block content %}
+<div class="ds-pagehead">
+  <div>
+    <h1 class="title">前沿技术 <span class="muted">{{ total }} 条</span></h1>
+    <div class="desc">arXiv / GitHub Trending——新技术从冒头到写进 JD 通常有 6-18 个月窗口，这里就是先手。
+      每条都是<b>治理后的中文信号卡</b>：技术是什么 / 关键结果 / 对你的意义，附原文链接。</div>
+  </div>
+  <div class="actions">
+    {% if ungoverned %}<span class="ds-badge gold-c">{{ ungoverned }} 条待治理</span>{% endif %}
+    <button class="ds-btn" id="btn-tech-collect">📡 采集技术源</button>
+    <button class="ds-btn plain" id="btn-regovern">🌍 重新治理未翻译</button>
+  </div>
+</div>
+
+<form method="get" class="filterbar">
+  <input name="q" placeholder="搜标题/要点/正文关键词" value="{{ filters.q }}" style="flex:1;min-width:180px">
+  <select name="source">
+    <option value="">全部来源</option>
+    {% for s in sources %}<option value="{{ s.id }}" {{ 'selected' if filters.source==s.id }}>{{ s.name }}（{{ s.n }}）</option>{% endfor %}
+  </select>
+  <select name="sort">
+    <option value="hot" {{ 'selected' if filters.sort=='hot' }}>🔥 热度优先</option>
+    <option value="new" {{ 'selected' if filters.sort=='new' }}>🕐 最新</option>
+    <option value="gold" {{ 'selected' if filters.sort=='gold' }}>🏅 含金量</option>
+  </select>
+  <button class="ds-btn">搜索</button>
+  <a href="/tech" class="ds-btn plain">重置</a>
+</form>
+
+{% if rising %}
+<div class="panel">
+  <h3>📈 技能势能 <span class="muted sm">（基于周快照对比，rising = 本周新出现频次）</span></h3>
+  <div style="display:flex;gap:6px;flex-wrap:wrap">
+    {% for r in rising %}<span class="ds-badge {{ 'sig-funding' if r.delta > 0 else 'sig-none' }}">{{ r.id }}
+      <b>{{ '+' if r.delta > 0 }}{{ r.delta }}</b>（{{ r.now }}）</span>{% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if items %}
+{% for t in items %}{{ sc.sigcard(t) }}{% endfor %}
+{{ sc.pager('/tech', filters, page, pages) }}
+{% else %}
+<div class="ds-empty">
+  <div class="icon">🔬</div>
+  <div class="hint">{% if filters.q or filters.source %}没有匹配的技术条目{% else %}还没有前沿技术数据{% endif %}</div>
+  <div class="action">{% if filters.q or filters.source %}<a class="ds-btn plain" href="/tech">清除筛选</a>
+    {% else %}<button class="ds-btn" onclick="document.getElementById('btn-tech-collect').click()">立即采集</button>{% endif %}</div>
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById("btn-tech-collect").onclick = function () {
+  TaskCenter.submit("pipeline", { collect: true, channels: [] }, "采集技术源（全链路）", this);
+};
+document.getElementById("btn-regovern").onclick = function () {
+  TaskCenter.submit("regovern", { kinds: ["tech"] }, "重新治理前沿技术（中文化+摘要提取）", this);
+};
+</script>
+{% endblock %}

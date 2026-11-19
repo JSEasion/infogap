@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="ds-pagehead">
+  <div><h1 class="title">市场仪表盘</h1>
+    <div class="desc">精选层行情 + 机会流 + 信息差看板。统计只吃过了质量门的数据。</div></div>
+  <div class="actions">
+    <a class="ds-btn" href="/import">🚀 全链路采集</a>
+    <a class="ds-btn plain" href="/reports">📑 生成报告</a>
+  </div>
+</div>
+
+<div class="ds-stat-grid">
+  <div class="ds-stat"><div class="num">{{ stats.total }}</div><div class="lbl">精选岗位</div></div>
+  <div class="ds-stat"><div class="num">{{ stats.companies }}</div><div class="lbl">公司</div></div>
+  <div class="ds-stat"><div class="num">{{ stats.salary_pct.p50 or '—' }}{% if stats.salary_pct.p50 %}K{% endif %}</div>
+    <div class="lbl">月薪中位 p50（n={{ stats.salary_n }}）</div></div>
+  <div class="ds-stat"><div class="num">{{ passed }}/{{ total }}</div><div class="lbl">通过我的硬门槛</div></div>
+  <div class="ds-stat"><div class="num">{{ funnel.curated or 0 }}</div>
+    <div class="lbl">过门精选 / 隔离 {{ funnel.quarantined or 0 }} · 拦截 {{ funnel.rejected or 0 }}</div></div>
+</div>
+
+{% if opportunities %}
+<div class="panel">
+  <h3>⚡ 今日机会流 <span class="muted sm">（gold 含金量 × 个人匹配度 Top 10）</span></h3>
+  <table>
+    <tr><th></th><th>职位</th><th>gold</th><th>匹配</th><th>薪资</th><th>来源</th><th>时效</th></tr>
+    {% for it in opportunities %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td><a href="/jobs/{{ it.job.id }}">{{ it.job.title }}</a><div class="muted sm">{{ it.job.company }} · {{ it.job.city or '?' }}</div></td>
+      <td>{% if it.job.gold_score %}<span class="ds-badge gold-a">🏅 {{ it.job.gold_score | round(0) }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+      <td><span class="badge {{ it.badge_cls }}">{{ it.badge }}</span></td>
+      <td class="sm">{{ it.job.salary_raw or '—' }}</td>
+      <td><span class="src src-{{ it.job.source }}">{{ it.job.source }}</span></td>
+      <td class="sm muted">{{ (it.job.published_at or it.job.created_at)[:10] if (it.job.published_at or it.job.created_at) else '—' }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+<div class="grid-2">
+  <div class="panel"><h3>技能需求 TOP15</h3><div id="chart-skills" class="chart"></div></div>
+  <div class="panel"><h3>月薪分布（区间中值口径 · n={{ stats.salary_n }}）</h3><div id="chart-salary" class="chart"></div></div>
+  <div class="panel"><h3>城市分布</h3><div id="chart-city" class="chart"></div></div>
+  <div class="panel"><h3>加班程度分布（L0=965 · L4=996）</h3><div id="chart-wlb" class="chart"></div></div>
+</div>
+
+<div class="grid-2">
+  <div class="panel">
+    <h3>💎 信息差看板 <span class="muted sm">（哪个渠道带来别处看不到的岗位）</span></h3>
+    {% if uniqueness %}
+    <table>
+      <tr><th>首发渠道</th><th>独家岗位</th><th>多渠道印证</th><th>平均领先(天)</th><th>最大领先</th></tr>
+      {% for u in uniqueness[:8] %}
+      <tr><td>{{ u.source }}</td>
+          <td><b>{{ u.unique }}</b></td><td>{{ u.shared }}</td>
+          <td>{{ u.lead_avg }}</td><td>{{ u.lead_max | round(1) }}</td></tr>
+      {% endfor %}
+    </table>
+    <p class="sm muted">独家 = 只在该渠道出现过的岗位；领先天数 = 冷门渠道早于主流平台出现的天数。</p>
+    {% else %}
+    <div class="ds-empty" style="padding:20px"><div class="icon">💎</div>
+      <div class="hint">多渠道采集几轮后，这里会告诉你信息差在哪里</div></div>
+    {% endif %}
+  </div>
+  <div class="panel">
+    <h3>📈 技能势能 <span class="muted sm">（周快照对比）</span></h3>
+    {% if rising %}
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      {% for r in rising %}<span class="ds-badge {{ 'sig-funding' if r.delta > 0 else 'sig-layoff' if r.delta < 0 else 'sig-none' }}">
+        {{ r.id }} <b>{{ '+' if r.delta > 0 }}{{ r.delta or '=' }}</b></span>{% endfor %}
+    </div>
+    {% else %}
+    <p class="muted sm">积累两周快照后出现趋势（每周自动落 snapshots）。</p>
+    {% endif %}
+    <h3 style="margin-top:18px">最新报告</h3>
+    {% if latest %}
+    <table>
+      {% for r in latest %}
+      <tr><td>{{ {'market': '📈 行情', 'gap': '🎯 差距', 'digest': '📰 周报'}[r.kind] or r.kind }}</td>
+          <td><a href="/reports/{{ r.id }}">{{ r.title }}</a></td><td class="sm muted">{{ r.created_at[:16] }}</td></tr>
+      {% endfor %}
+    </table>
+    {% else %}<p class="muted sm">还没有报告。</p>{% endif %}
+  </div>
+</div>
+
+<div class="panel">
+  <h3>薪资与门槛速览</h3>
+  <p>p25 = <b>{{ stats.salary_pct.p25 or '—' }}K</b> ·
+     p50 = <b>{{ stats.salary_pct.p50 or '—' }}K</b> ·
+     p75 = <b>{{ stats.salary_pct.p75 or '—' }}K</b>
+     ｜ 经验要求：{% for t in stats.exp_dist[:5] %}{{ t.label }}×{{ t.n }} {% endfor %}
+  </p>
+  {% if stats.salary_n < stats.total %}
+  <p class="muted">⚠ 薪资样本 n={{ stats.salary_n }}/{{ stats.total }}：仅含明确薪资原文的精选行；公告类聚合页已排除。</p>
+  {% endif %}
+</div>
+<script type="application/json" id="dash-data">{{ chart_data | safe }}</script>
+{% endblock %}

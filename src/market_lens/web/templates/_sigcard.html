@@ -1,0 +1,57 @@
+{# 共享信号卡宏：资讯/前沿技术两页复用。
+   数据都是治理后的：中文一句话 + 中文要点 + 影响；原文标题与原文链接始终可见。 #}
+{% macro sigcard(n) %}
+<div class="ds-sigcard">
+  <div class="head">
+    <span class="ds-badge grp-tech">{{ n.source | srczh }}</span>
+    {% if n.signal_type and n.signal_type != 'none' and n.kind == 'news' %}
+    <span class="ds-badge sig-{{ n.signal_type }}">{{ {'funding': '💰 融资', 'layoff': '📉 裁员',
+      'release': '🚀 发布', 'policy': '📋 政策', 'hiring': '🔁 招聘动向', 'tech': '🔬 技术'}[n.signal_type] }}</span>
+    {% endif %}
+    {% if n.heat %}
+    <span class="ds-badge gold-a">🔥 {{ (n.heat / 1000) | round(1) if n.heat >= 1000 else n.heat }}{{ 'k' if n.heat >= 1000 }}</span>
+    {% endif %}
+    {% if n.gold_score %}
+    <span class="ds-badge {{ 'gold-a' if n.gold_score >= 80 else 'gold-b' if n.gold_score >= 65 else 'gold-c' }}">🏅 含金 {{ n.gold_score | round(0) }}</span>
+    {% endif %}
+    {% if n.card_method != 'llm' %}<span class="ds-badge gold-c" title="LLM 恢复后可一键重新治理">{{ '待提取' if n.title | hascjk else '未翻译·待治理' }}</span>{% endif %}
+    <span class="muted sm">{{ (n.published_at or n.fetched_at or '')[:10] }}</span>
+  </div>
+  {% if n.one_liner and n.one_liner != n.title %}
+  <div class="one">{% if n.url %}<a href="{{ n.url }}" target="_blank" rel="noopener">{{ n.one_liner }}</a>
+    {% else %}{{ n.one_liner }}{% endif %}</div>
+  {% elif n.title %}
+  <div class="one">{% if n.url %}<a href="{{ n.url }}" target="_blank" rel="noopener">{{ n.title }}</a>
+    {% else %}{{ n.title }}{% endif %}</div>
+  {% endif %}
+  {% if n.title and n.one_liner and n.title != n.one_liner %}
+  <div class="orig">原文：<span class="muted">{{ n.title }}</span>
+    {% if n.url %}<a href="{{ n.url }}" target="_blank" rel="noopener">查看原文 ↗</a>{% endif %}</div>
+  {% endif %}
+  {% if n.key_points %}
+  <ul class="points">{% for p in n.key_points %}<li>{{ p }}</li>{% endfor %}</ul>
+  {% endif %}
+  {% if n.impact %}<div class="impact">💡 {{ n.impact }}</div>{% endif %}
+  {% if n.entities %}
+  <div class="chips">{% for e in n.entities[:6] %}<span class="chip sm">{{ e }}</span>{% endfor %}</div>
+  {% endif %}
+  {% if n.fulltext %}
+  <details><summary>展开正文</summary>
+    <div class="jd-body" style="margin-top:8px">{{ n.fulltext | to_paragraphs }}</div>
+  </details>
+  {% endif %}
+</div>
+{% endmacro %}
+
+{% macro pager(base, filters, page, pages) %}
+<div class="pager">
+  {% if page > 1 %}<a href="{{ base }}?{{ filters|toquery }}&page={{ page - 1 }}">← 上一页</a>{% endif %}
+  {% set win_start = [1, page - 2] | max %}
+  {% set win_end = [pages, win_start + 4] | min %}
+  {% for p in range(win_start, win_end + 1) %}
+    {% if p == page %}<b>{{ p }}</b>{% else %}<a href="{{ base }}?{{ filters|toquery }}&page={{ p }}">{{ p }}</a>{% endif %}
+  {% endfor %}
+  {% if page < pages %}<a href="{{ base }}?{{ filters|toquery }}&page={{ page + 1 }}">下一页 →</a>{% endif %}
+  <span class="muted">第 {{ page }} / {{ pages }} 页</span>
+</div>
+{% endmacro %}

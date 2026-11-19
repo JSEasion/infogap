@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="ds-pagehead">
+  <div>
+    <h1 class="title">数据接入中心</h1>
+    <div class="desc">一切采集皆任务：点击后立即返回，右下角任务中心看进度。<b>全量落地 → 质量门 → 精选</b>，低分进隔离区不污染主库。</div>
+  </div>
+  <div class="actions">
+    <button class="ds-btn" id="btn-runall">🚀 一键全链路</button>
+    <button class="ds-btn plain" id="btn-rescore">♻️ 重放质量门</button>
+  </div>
+</div>
+
+<div class="ds-tabs" data-ds-tabs="import">
+  <button class="ds-tab active" data-ds-tab="url">🔗 URL 导入</button>
+  <button class="ds-tab" data-ds-tab="channels">📡 渠道中心</button>
+  <button class="ds-tab" data-ds-tab="manual">📋 手动导入</button>
+  <button class="ds-tab" data-ds-tab="history">🕘 历史</button>
+  <button class="ds-tab" data-ds-tab="advanced">⚙️ 高级</button>
+</div>
+
+<!-- ============ URL 导入 ============ -->
+<div data-ds-tabpanel="import" data-ds-panel="url">
+  <div class="panel">
+    <h3>看到好网站，贴链接</h3>
+    <p class="muted sm" style="margin-top:0">自动识别页面类型（岗位列表 / 岗位详情 / 资讯文章 / 前沿技术），
+      抓取后<b>照常过质量门</b>——URL 导入不豁免任何检查。</p>
+    <div class="ds-field">
+      <label for="url-input">链接</label>
+      <input id="url-input" type="url" placeholder="https://www.zhipin.com/job_detail/… 或任意资讯/技术文章链接" />
+      <div class="err-msg">请输入 http(s):// 开头的链接</div>
+    </div>
+    <button class="ds-btn" id="btn-url-import">识别并导入</button>
+    <span class="muted sm" style="margin-left:10px">需登录的站点会明确提示，走「高级 → 浏览器半自动」</span>
+  </div>
+  <div class="panel">
+    <h3>支持的识别类型</h3>
+    <table>
+      <tr><th>类型</th><th>识别依据</th><th>去处</th></tr>
+      <tr><td>岗位列表页</td><td>站点适配（Boss直聘 / 猎聘 / 国聘…）+ 卡片特征</td><td>raw → 质量门 → 岗位库</td></tr>
+      <tr><td>岗位详情页</td><td>站点适配 + 正文特征</td><td>同上</td></tr>
+      <tr><td>资讯文章</td><td>正文密度 / article 结构</td><td>信号卡流水线</td></tr>
+      <tr><td>JS 动态页</td><td>httpx 空壳检测</td><td>自动降级 Playwright 无头渲染</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ============ 渠道中心 ============ -->
+<div data-ds-tabpanel="import" data-ds-panel="channels" hidden>
+  <div class="ds-channels">
+    {% for ch in channel_cards %}
+    <div class="ds-channel">
+      <div class="head">
+        <span class="name">{{ ch.name }}</span>
+        <span class="ds-badge grp-{{ ch.group }}">{{ ch.group_desc }}</span>
+      </div>
+      <div class="sm muted">{{ ch.desc }}</div>
+      <div class="sm">
+        可信 <b>{{ ch.tier }}</b> · 稀缺 <b>{{ ch.scarcity }}</b>
+        {% if ch.last_n is not none %} · 上次 +{{ ch.last_n }}{% endif %}
+      </div>
+      <div class="foot">
+        <span class="health {{ ch.health_cls }}"><span class="led"></span>{{ ch.health }}</span>
+        {% if ch.collectable %}<button class="ds-btn sm" data-collect="{{ ch.id }}">采集</button>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="panel" style="margin-top:14px">
+    <h3>渠道说明</h3>
+    <p class="sm muted" style="margin:4px 0">可信 tier：信息源可靠性（官方 API=1.0，爬取聚合≈0.6，TG/匿名频道起步 0.55，
+      靠交叉验证回填）。稀缺 scarcity：信息差系数——0.2=全网都有，0.9=冷门独家。
+      冷门渠道数据经<b>反诈骗硬规则 + LLM 灰区裁决 + 隔离区复核</b>三重兜底。</p>
+  </div>
+</div>
+
+<!-- ============ 手动导入 ============ -->
+<div data-ds-tabpanel="import" data-ds-panel="manual" hidden>
+  <div class="panel">
+    <h3>粘贴 JD</h3>
+    <p class="muted sm" style="margin-top:0">多条用 <code>---</code> 分隔；同样过质量门。</p>
+    <textarea id="paste-text" rows="10" placeholder="职位名&#10;公司：…&#10;薪资：15-25K·14薪&#10;岗位职责…&#10;---&#10;下一条…"></textarea>
+    <button class="ds-btn" id="btn-paste">导入</button>
+  </div>
+  <div class="panel">
+    <h3>上传文件</h3>
+    <p class="muted sm" style="margin-top:0">支持 .txt / .md（<code>---</code> 分隔）/ .jsonl（每行 <code>{"text": …}</code>）</p>
+    <input type="file" id="file-input" accept=".txt,.md,.jsonl" />
+    <div style="margin-top:10px"><button class="ds-btn" id="btn-file">上传导入</button></div>
+  </div>
+</div>
+
+<!-- ============ 历史 ============ -->
+<div data-ds-tabpanel="import" data-ds-panel="history" hidden>
+  <div class="panel">
+    <h3>最近导入任务（漏斗：抓取 → 去重 → 过门 → 隔离）</h3>
+    {% if task_history %}
+    <table>
+      <tr><th>时间</th><th>任务</th><th>状态</th><th>漏斗</th></tr>
+      {% for t in task_history %}
+      <tr>
+        <td class="sm">{{ t.created_at[:16] }}</td>
+        <td>{{ t.title }}</td>
+        <td class="sm">{{ {done:'✅',failed:'❌',running:'⏳',queued:'🕒',cancelled:'⛔',orphaned:'🕳'}[t.status] }} {{ t.stage }}</td>
+        <td class="sm">
+          {% if t.result and t.result.curated is defined %}
+            精选 {{ t.result.curated }} · 隔离 {{ t.result.quarantined }} · 拦截 {{ t.result.rejected }}
+          {% else %}{{ t.error or '—' }}{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <div class="ds-empty"><div class="icon">📥</div><div class="hint">还没有导入任务</div>
+      <div class="action"><button class="ds-btn" onclick="document.querySelector('[data-ds-tab=url]').click()">从 URL 导入开始</button></div></div>
+    {% endif %}
+  </div>
+  {% if last_pipeline %}
+  <div class="panel">
+    <h3>最近一次全链路运行 <span class="muted sm">{{ last_pipeline.finished_at }}（{{ last_pipeline.trigger }}）</span></h3>
+    <div class="ds-funnel">
+      {% for s in last_pipeline.stages %}
+        {% if loop.index > 1 %}<span class="arrow">→</span>{% endif %}
+        <div class="stage"><b>{{ '✓' if s.ok else '✗' }}</b><span>{{ s.name }}</span></div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ============ 高级 ============ -->
+<div data-ds-tabpanel="import" data-ds-panel="advanced" hidden>
+  <div class="panel">
+    <h3>搜索 API 采集 <span class="muted sm">{{ '（Tavily/博查 已配置）' if search_ready else '（未配置 key，见设置页）' }}</span></h3>
+    <p class="sm muted">搜索 API 线索已并入全链路采集；配置 key 后自动启用。</p>
+  </div>
+  <div class="panel">
+    <h3>浏览器半自动采集（需登录站点）</h3>
+    <ol class="sm muted" style="line-height:1.9">
+      <li>终端运行 Playwright 采集脚本（capture extra），登录招聘站后回车采集；</li>
+      <li>或浏览器「另存为 HTML」后上传：<input type="file" id="html-input" accept=".html,.htm" multiple style="display:inline-block;width:auto" />
+        <button class="ds-btn sm" id="btn-html">解析导入</button></li>
+    </ol>
+  </div>
+  <div class="panel">
+    <h3>示例数据（演示用）</h3>
+    <p class="sm muted">32 条合成 JD，仅用于体验界面；正式使用请清除。</p>
+    <button class="ds-btn plain" id="btn-sample">载入示例</button>
+    <button class="ds-btn danger" id="btn-clear-sample">🗑 清除示例数据</button>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+const TC = TaskCenter;
+document.getElementById("btn-runall").onclick = function () {
+  TC.submit("pipeline", { collect: true }, "全链路采集", this);
+};
+document.getElementById("btn-rescore").onclick = function () {
+  TC.submit("rescore", {}, "重放质量门", this);
+};
+/* URL 导入 */
+document.getElementById("btn-url-import").onclick = function () {
+  const input = document.getElementById("url-input");
+  const url = input.value.trim();
+  const field = input.closest(".ds-field");
+  if (!/^https?:\/\//.test(url)) { field.classList.add("invalid"); return; }
+  field.classList.remove("invalid");
+  TC.submit("url_import", { url }, "URL 导入", this);
+};
+/* 渠道单采 */
+document.querySelectorAll("[data-collect]").forEach(b => {
+  b.onclick = () => TC.submit("pipeline", { channels: [b.dataset.collect], collect: true },
+    "渠道采集：" + b.dataset.collect, b);
+});
+/* 粘贴 */
+document.getElementById("btn-paste").onclick = function () {
+  const text = document.getElementById("paste-text").value;
+  if (!text.trim()) return dsToast("没有内容", "先粘贴 JD 文本", "err");
+  TC.submit("import_text", { texts: text.split(/^\s*[-=*]{3,}\s*$/m).map(s=>s.trim()).filter(Boolean) },
+    "粘贴导入", this);
+};
+/* 文件 */
+document.getElementById("btn-file").onclick = async function () {
+  const f = document.getElementById("file-input").files[0];
+  if (!f) return dsToast("未选择文件", "", "err");
+  const text = await f.text();
+  let texts;
+  if (f.name.endsWith(".jsonl")) {
+    texts = text.split("\n").map(l => { try { return JSON.parse(l).text; } catch(e){ return ""; } }).filter(Boolean);
+  } else texts = text.split(/^\s*[-=*]{3,}\s*$/m).map(s=>s.trim()).filter(Boolean);
+  TC.submit("import_text", { texts }, "文件导入：" + f.name, this);
+};
+/* HTML 另存导入（发原始 HTML，服务端选择器解析） */
+document.getElementById("btn-html").onclick = async function () {
+  const files = [...document.getElementById("html-input").files];
+  if (!files.length) return dsToast("未选择文件", "", "err");
+  const htmls = [];
+  for (const f of files) htmls.push(await f.text());
+  TC.submit("import_html", { htmls }, "浏览器 HTML 导入", this);
+};
+/* 示例 */
+document.getElementById("btn-sample").onclick = function () { TC.submit("sample", {}, "载入示例数据", this); };
+document.getElementById("btn-clear-sample").onclick = function () {
+  dsConfirm("清除示例数据", "将删除全部 source=sample 的岗位与示例资讯，不可恢复。", () =>
+    TaskCenter.submit("clear_sample", {}, "清除示例数据"), "清除", true);
+};
+</script>
+{% endblock %}
